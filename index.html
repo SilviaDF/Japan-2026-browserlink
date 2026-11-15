@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#005f9e">
-    <meta name="app-build" content="2026-11-15-v27-unified-header-controls">
+    <meta name="app-build" content="2026-11-15-v28-compact-updates-audit">
     <meta name="description" content="Diario di viaggio interattivo per il Giappone: itinerario, hotel, mappe, tè a Uji, checklist e spese.">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -1483,6 +1483,41 @@ input, textarea, select { max-width:100%; }
 @media(max-width:375px){
   .app-header .header-actions{justify-content:flex-start!important;gap:5px!important;}
 }
+
+
+/* V28: compact activity feed, with optional diagnostics. */
+.j28-updates{max-width:1030px;margin:0 auto;display:grid;gap:13px;min-width:0}
+.j28-hero{padding:20px 22px;gap:12px}
+.j28-hero h2{font-size:clamp(22px,4vw,29px);margin:0 0 3px}
+.j28-hero p{font-size:12px;opacity:.92;line-height:1.45}
+.j28-hero .j24-sync-button{flex:none;white-space:nowrap;min-height:42px}
+.j28-status-strip{display:flex;flex-wrap:wrap;align-items:center;gap:7px 9px;
+ border-radius:13px;padding:11px 14px;background:#edf6f8;border:1px solid #d1e4eb;
+ font:600 12px/1.5 'DM Sans',system-ui,sans-serif;color:#3d6372}
+.j28-status-strip strong{font-size:12px;color:#234a5d}
+.j28-status-dot{flex:none;width:8px;height:8px;border-radius:50%;background:#b1b7bc}
+.j28-status-dot.ok{background:#23a776;box-shadow:0 0 0 3px #24b18022}
+.j28-pending{padding:2px 7px;border-radius:8px;background:#fff0c6;color:#87621f;font-weight:800}
+.j28-feedback{margin:0;padding:9px 12px;border-radius:10px;background:#fff8e8;color:#795123;font-size:12px;overflow-wrap:anywhere}
+.j28-change-card{padding:17px 18px!important}
+.j28-list-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.j28-list-heading h3{font:800 19px/1.35 'Literata',Georgia,serif;margin:0;color:#234d63}
+.j28-filters{display:inline-flex;gap:4px;padding:3px;background:#f0f5f7;border-radius:10px;max-width:100%}
+.j28-filters button{border:0;border-radius:8px;padding:8px 10px;min-height:36px;font:800 11px 'DM Sans',sans-serif;color:#536b79;cursor:pointer}
+.j28-filters button.active{background:white;color:#174e69;box-shadow:0 1px 5px #183f5a19}
+.j28-events{margin-top:13px!important;gap:7px!important}
+.j28-events .j24-event{padding:10px 12px;border-radius:11px;align-items:center;gap:10px}
+.j28-events .j24-event-icon{width:32px;height:32px;border-radius:9px;font-size:17px}
+.j28-events .j24-event-body strong{font-size:12px;line-height:1.45}
+.j28-events .j24-event-body small{margin-top:2px}
+.j28-empty{margin-top:12px;color:#698090;font:600 12px/1.6 'DM Sans',sans-serif;padding:17px 11px;text-align:center;background:#f6fafb;border-radius:10px}
+.j28-diagnostics{background:#f8fbfc;border:1px solid #dbe8ee;border-radius:11px;color:#587383;font:600 12px/1.7 'DM Sans',sans-serif;overflow:hidden}
+.j28-diagnostics summary{padding:12px 15px;cursor:pointer;font-weight:800;min-height:44px;display:list-item;list-style-position:inside}
+.j28-diagnostics summary:focus-visible{outline:2px solid #147cac;outline-offset:-3px}
+.j28-diagnostics-body{padding:0 15px 14px;display:grid;gap:6px;overflow-wrap:anywhere}
+.theme-pokemon .j28-status-strip{background:#fff4f2;border-color:#f1d8d4}
+.theme-pokemon .j28-list-heading h3{color:#933747}
+@media(max-width:600px){.j28-hero{padding:18px 15px}.j28-hero .j24-sync-button{width:auto!important;padding:9px 12px!important;max-width:100%}.j28-change-card{padding:12px!important}.j28-list-heading{align-items:start;gap:8px}.j28-filters{width:100%}.j28-filters button{flex:1}.j28-status-strip{font-size:11px;gap:5px 7px}.j28-separator{display:none}}
 
 </style>
 </head>
@@ -3077,43 +3112,51 @@ function Japan24ActivityPage({status,onRefresh}){
  const [history,setHistory]=React.useState(()=>Japan22Cloud.getRecentActivity());
  const [working,setWorking]=React.useState(false);
  const [message,setMessage]=React.useState('');
+ const [filter,setFilter]=React.useState('all');
  React.useEffect(()=>Japan22Cloud.subscribeActivity(setHistory),[]);
+ const ownName=Japan22Cloud.getName()||'';
+ const otherLabel=/silvia/i.test(ownName)?'Solo Ugo':/ugo/i.test(ownName)?'Solo Silvia':'Dell’altro';
  const refresh=async()=>{setWorking(true);setMessage('');try{
-    const r=await Japan22Cloud.refreshNow();setMessage('✓ Server contattato: '+r.count+' sezioni trovate.');
-  }catch(e){setMessage('⚠ '+(e.message||String(e)));}finally{setWorking(false);}};
- const format=iso=>iso?new Date(iso).toLocaleString('it-IT',{dateStyle:'medium',timeStyle:'short'}):'Nessun controllo server ancora effettuato';
+   await Japan22Cloud.refreshNow();setMessage('✓ Aggiornato dal server');
+ }catch(e){setMessage('⚠ '+(e.message||String(e)));}finally{setWorking(false);}};
+ const format=iso=>iso?new Date(iso).toLocaleString('it-IT',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'Non ancora';
  const icon=id=>id==='previewNotes'?'📒':id?.startsWith('route_')?'🗓️':id==='favourites'?'⭐':id==='notes'?'📝':id==='quest'?'🧭':'✨';
- const info=(label,value)=>R('article',{className:'j24-metric'},R('span',null,label),R('strong',null,value));
- // Technical reconnect/recovery notices should never clutter the shared timeline.
- const visibleHistory=(Array.isArray(history)?history:[]).filter(event=> !/modifica offline recuperata/i.test(event?.description||''));
- return R('section',{className:'j24-activity-page'},
-   R('header',{className:'j24-hero'},R('div',null,
-      R('span',{className:'j24-eyebrow'},'JAPAN 2026 · SILVIA × UGO'),
-      R('h2',null,'10. 📣 Updates'),
-      R('p',null,'Scopri cosa avete aggiunto, verifica l’ultimo contatto con Firebase e aggiorna trascinando la pagina verso il basso.')),
-      R('button',{className:'j24-sync-button',type:'button',disabled:working,onClick:refresh},working?'Controllo…':'⟳ Sincronizza adesso')),
-   R('div',{className:'j24-dashboard'},
-       info('Connessione · viaggio '+(status.tripTag||'—'),status.connected?(status.label||'Collegato'):'Non collegato'),
-       info('Ultimo controllo reale del server',format(status.lastServerRead)),
-       info('Ultimo aggiornamento ricevuto',status.lastRemoteAuthor?status.lastRemoteAuthor+' · '+format(status.lastRemoteChange):'Nessuna modifica remota osservata in questa sessione')),
-   R('p',{className:'j24-help'},'Controllate che l’ID breve del viaggio sia uguale sul telefono di Silvia e su quello di Ugo. Non condividere qui il codice d’invito. Una modifica fatta offline con la V22/V23 potrebbe non essere stata inviata: recuperatela dal dispositivo che la contiene.'),
-   status.pending>0 && R('p',{className:'j24-badge warn'},'⚠ '+status.pending+' modifiche in attesa di invio'),
-   message && R('div',{className:'j24-help',role:'status'},message),
-   status.auditError && R('div',{className:'j24-help',role:'alert'},'⚠ '+status.auditError),
-   R('div',{className:'j24-change-card'},R('h3',null,'📣 Chi ha cambiato cosa?'),
-      R('p',{className:'j24-help'},
-        'Il registro condiviso parte dalla V24: le aggiunte precedenti non vengono inventate retroattivamente. Le attività sono cifrate. Se Ugo ha modificato l’Archivio nella V23, prova “Sincronizza adesso”: la modifica dovrebbe comparire nella sezione 7 anche se non ha una voce nello storico.'),
-      !status.connected?R('div',{className:'j24-empty'},'Per vedere le modifiche, entra nel viaggio da ☁️ Condividi usando lo stesso invito J22 su entrambi i telefoni.'):
-      !status.auditSupported?R('div',{className:'j24-empty'},'Lo storico non è ancora attivo. Pubblica le regole Firebase V24 per consentire il registro cifrato. La sincronizzazione delle tappe e note può comunque funzionare.'):
-      visibleHistory.length?R('ol',{className:'j24-events'},visibleHistory.map(event=>R('li',{key:event.recordId,className:'j24-event'},
-            R('span',{className:'j24-event-icon'},icon(event.id)),R('div',{className:'j24-event-body'},
-            R('strong',null,event.description||'Modifica condivisa'),
-            R('small',null,(event.by||'Dispositivo collegato')+' · '+format(event.at)))))):
-         R('div',{className:'j24-empty'},'Nessuna nuova modifica registrata. Aggiungete una tappa o una scoperta dalla V24 per vedere qui l’evento.')),
-   R('div',{className:'j24-help'},
-      R('strong',null,'Se non vedi le aggiunte di Ugo:'),
-      R('p',null,'1. Su entrambi i telefoni aprite ☁️ Condividi: deve essere collegato lo stesso viaggio. 2. Ugo controlla che non ci siano errori o invii pendenti. 3. Premi “Sincronizza adesso” su entrambi. 4. Se le modifiche sono state fatte offline, prima riconnettete il telefono di Ugo. 5. Le foto dell’Archivio non si sincronizzano, solo le schede testuali.'),
-      R('p',null,'Le modifiche simultanee all’intero Archivio possono ancora entrare in conflitto: non modificate la stessa scheda contemporaneamente.')));
+ const visibleHistory=(Array.isArray(history)?history:[])
+   .filter(event=> !/modifica offline recuperata/i.test(event?.description||''))
+   .filter(event=>filter==='all'||(ownName && String(event.by||'').toLocaleLowerCase()!==ownName.toLocaleLowerCase()));
+ const connected=!!status.connected;
+ return R('section',{className:'j24-activity-page j28-updates'},
+   R('header',{className:'j24-hero j28-hero'},
+     R('div',null,R('h2',null,'10. 📣 Updates'),
+       R('p',null,'Le ultime novità del vostro viaggio.')),
+     R('button',{className:'j24-sync-button',type:'button',disabled:working,onClick:refresh},working?'Aggiorno…':'↻ Aggiorna')),
+   R('div',{className:'j28-status-strip',role:'status'},
+     R('span',{className:'j28-status-dot '+(connected?'ok':'off')}),
+     R('strong',null,connected?'Cloud collegato':'Non collegato'),
+     R('span',{className:'j28-separator','aria-hidden':'true'},'·'),
+     R('span',null,'Ultimo controllo: '+format(status.lastServerRead)),
+     status.pending>0&&R('span',{className:'j28-pending'},status.pending+' in attesa')),
+   message&&R('p',{className:'j28-feedback',role:'status'},message),
+   status.auditError&&R('p',{className:'j28-feedback',role:'alert'},'⚠ Registro non disponibile. Controlla le regole Firebase.'),
+   R('section',{className:'j24-change-card j28-change-card'},
+     R('div',{className:'j28-list-heading'},
+       R('h3',null,'Attività recenti'),
+       R('div',{className:'j28-filters',role:'group','aria-label':'Filtra le modifiche'},
+         R('button',{type:'button','aria-pressed':filter==='all',className:filter==='all'?'active':'',onClick:()=>setFilter('all')},'Tutte'),
+         R('button',{type:'button','aria-pressed':filter==='others',className:filter==='others'?'active':'',onClick:()=>setFilter('others')},otherLabel))),
+     !connected?R('p',{className:'j28-empty'},'Collega il viaggio da ☁️ per vedere le modifiche condivise.'):
+     !status.auditSupported?R('p',{className:'j28-empty'},'Registro non attivo. Verifica le regole Firestore V24.'):
+     visibleHistory.length?R('ol',{className:'j24-events j28-events'},visibleHistory.map(event=>R('li',{key:event.recordId,className:'j24-event'},
+       R('span',{className:'j24-event-icon','aria-hidden':'true'},icon(event.id)),
+       R('div',{className:'j24-event-body'},R('strong',null,event.description||'Modifica condivisa'),
+         R('small',null,(event.by||'Dispositivo collegato')+' · '+format(event.at)))))):
+       R('p',{className:'j28-empty'},filter==='others'?'Nessuna modifica dall’altro dispositivo.':'Ancora nessuna modifica registrata.')),
+   R('details',{className:'j28-diagnostics'},
+     R('summary',null,'Dettagli sincronizzazione'),
+     R('div',{className:'j28-diagnostics-body'},
+       R('p',null,'Viaggio: '+(status.tripTag||'—')+' · Versione: V28'),
+       R('p',null,'Ultima modifica ricevuta: '+(status.lastRemoteAuthor||'—')+' · '+format(status.lastRemoteChange)),
+       R('p',null,'Se manca qualcosa, verificate lo stesso viaggio su entrambi i telefoni e premete Aggiorna. Le fotografie non sono condivise.'))));
 }
 
 function App() {
