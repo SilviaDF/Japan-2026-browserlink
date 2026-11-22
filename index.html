@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#005f9e">
-    <meta name="app-build" content="2026-11-15-v28-compact-updates-audit">
+    <meta name="app-build" content="2026-11-22-v30-encrypted-photo-sync">
     <meta name="description" content="Diario di viaggio interattivo per il Giappone: itinerario, hotel, mappe, tè a Uji, checklist e spese.">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -1519,6 +1519,31 @@ input, textarea, select { max-width:100%; }
 .theme-pokemon .j28-list-heading h3{color:#933747}
 @media(max-width:600px){.j28-hero{padding:18px 15px}.j28-hero .j24-sync-button{width:auto!important;padding:9px 12px!important;max-width:100%}.j28-change-card{padding:12px!important}.j28-list-heading{align-items:start;gap:8px}.j28-filters{width:100%}.j28-filters button{flex:1}.j28-status-strip{font-size:11px;gap:5px 7px}.j28-separator{display:none}}
 
+
+/* V29: integrated day + map workspace, shared notes and archive cards */
+.j29-workspace{min-width:0;display:grid;gap:13px}
+.j29-workspace-nav{position:sticky;top:var(--j29-nav-top,100px);z-index:35;display:grid;grid-template-columns:1fr 1fr;gap:5px;background:#f0f6f6;padding:6px;border:1px solid #d9e7e7;border-radius:15px;box-shadow:0 4px 12px #173c4514}
+.j29-workspace-nav button{border-radius:10px;min-height:46px;padding:9px 11px;font:800 12px 'DM Sans',system-ui,sans-serif;color:#33657a;line-height:1.35}
+.j29-workspace-nav button.active{background:#145d85;color:white;box-shadow:0 3px 8px #21496032}
+.j29-archive-date{display:flex;flex-direction:column;gap:7px;max-width:320px;margin:12px 0;color:#496276;font-size:12px;font-weight:800}
+.j29-archive-date input{background:white;border:1px solid #c6d3da;border-radius:10px;padding:10px;font-size:14px;min-height:44px}
+.j29-note-hint{font-size:11px!important;line-height:1.5;color:#677a83;display:block;margin:6px 0}
+.j29-shared-form{display:grid;gap:9px;margin:12px 0}.j29-shared-form textarea{width:100%;background:white;border:1px solid #d9e1e5;border-radius:11px;padding:12px;min-height:80px}
+.j29-shared-form button,.j29-food-card button,.j29-seasonal-card button{background:#146c82;color:white;border-radius:10px;min-height:39px;padding:8px 12px;font-weight:800;font-size:12px}
+.j29-shared-form button:disabled{opacity:.5}.j29-shared-list{display:grid;gap:9px;margin-top:9px}
+.j29-shared-entry{position:relative;background:#f4f9f8;border:1px solid #d6e4e1;padding:13px 43px 13px 12px;border-radius:12px;overflow-wrap:anywhere}
+.j29-shared-entry p{white-space:pre-wrap;font-size:13px;color:#244b5f}.j29-shared-entry small{display:block;font-size:10px;color:#748a93;margin-top:7px}
+.j29-shared-entry button{position:absolute;top:8px;right:8px;width:31px;height:31px;background:#fff0e8;color:#a74d43;border-radius:8px;font-weight:900}
+.j29-locals{background:#fffaf0;border:1px solid #e3ddc8;padding:14px;border-radius:15px;margin:12px 0}
+.j29-locals h4{font:850 16px 'Literata',Georgia,serif;color:#2b5970;margin:0 0 7px}
+.j29-food-card,.j29-seasonal-card{display:grid;gap:5px;padding:12px 0;border-top:1px solid #e6e2d4}
+.j29-food-card strong,.j29-seasonal-card strong{font-size:13px;color:#274b59}.j29-food-card small{font-size:11px;color:#926c35}
+.j29-food-card p,.j29-seasonal-card p{font-size:11px;color:#61737a;line-height:1.55}.j29-food-card>div{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.j29-food-card a,.j29-seasonal-card a{color:#206d90;text-decoration:underline;font-size:11px;font-weight:800}
+.j29-seasonal-card{background:#eaf8f0;border:1px solid #c9e5d5;border-radius:12px;padding:13px;margin-top:8px}
+@media(max-width:650px){.j29-workspace-nav{top:125px}.j29-workspace-nav button{font-size:11px;padding:8px 5px}.j29-locals{padding:12px}.j29-food-card>div button{width:100%}.j29-shared-entry{padding-right:42px}}
+/* V30: photo sync hint on mobile */
+.archive-disclaimer{font-size:11px;line-height:1.6;padding:10px 12px;background:#eff8f4;border:1px solid #cfe8d9;border-radius:10px}
 </style>
 </head>
 <body class="bg-[#fdf8e7] text-slate-800 antialiased selection:bg-[#00a8e8] selection:text-white">
@@ -2276,17 +2301,40 @@ const FIELD_SAMPLES = {
     science: { icon: '🪐', kind: 'science', name: 'Un’idea da un museo scientifico', place: 'Ueno · esempio', topic: 'Astrofisica', question: 'Cosa vorremmo leggere insieme su questo argomento?', score: 4, note: 'ESEMPIO: registra il concetto che ti ha sorpreso e una domanda da approfondire dopo il viaggio.' },
     gaming: { icon: '🎮', kind: 'gaming', name: 'Il gioco che ci ha fatto fermare', place: 'Den Den Town · esempio', franchise: 'Zelda', find: 'Artbook o soundtrack', score: 4, note: 'ESEMPIO: la scoperta non è soltanto l’oggetto: racconta perché vi ha colpito.' }
 };
+// V29: Japanese review platform Tabelog, selected for the trip; area and opening hours must be checked.
+// We cannot verify the nationality of individual reviewers. No fabricated star ratings.
+const LOCAL_FOOD_JP = [
+ {city:'Tokyo',area:'Kinshicho',name:'Chuka Soba Manchiken',dish:'Shoyu ramen / tsukemen',note:'Kinshichō · recensito su Tabelog; comodo presso la prima base.',query:'Chuka Soba Manchiken Kinshicho Tokyo',source:'https://tabelog.com/en/tokyo/A1312/A131201/rstLst/ramen/'},
+ {city:'Tokyo',area:'Kinshicho',name:'Madai Ramen Mengyo Honten',dish:'Ramen di orata',note:'Kinshichō · ramen specializzato; controlla la coda.',query:'Madai Ramen Mengyo Honten Kinshicho',source:'https://tabelog.com/en/tokyo/A1312/A131201/rstLst/ramen/'},
+ {city:'Tokyo',area:'Ueno',name:'Ponta Honke',dish:'Tonkatsu classico',note:'Ueno / Okachimachi · selezione Tabelog, pranzo da programmare.',query:'Ponta Honke Ueno Tokyo',source:'https://tabelog.com/en/tokyo/A1311/A131101/13003587/'},
+ {city:'Kyoto',area:'Gion',name:'Gion Gonbee',dish:'Udon, soba, oyakodon',note:'Gion · cucina tradizionale semplice; controlla le fasce orarie.',query:'Gion Gonbee Kyoto',source:'https://tabelog.com/en/kyoto/A2601/A260301/rstLst/udon/'},
+ {city:'Kyoto',area:'Gion',name:'Sohonke Nishin Soba Matsuba',dish:'Nishin soba di Kyoto',note:'Gion-Shijō · antico piatto locale vicino a Minamiza.',query:'Sohonke Nishin Soba Matsuba Kyoto',source:'https://tabelog.com/en/kyoto/A2601/A260301/rstLst/RC0104/'},
+ {city:'Kyoto',area:'Gojo',name:'Soba Teuchi Takahashi',dish:'Soba a mano',note:'Gojo-Kawaramachi · presente nella raccolta Tabelog di soba.',query:'Soba Teuchi Takahashi Kyoto',source:'https://tabelog.com/en/matome/32051/'},
+ {city:'Uji',area:'Uji',name:'Nakamura Tokichi Honten',dish:'Matcha soba e dolci al tè',note:'Uji centro · abbinamento tè e pranzo, possibili code.',query:'Nakamura Tokichi Honten Uji',source:'https://tabelog.com/en/kyoto/A2607/A260701/26000722/'},
+ {city:'Uji',area:'Uji',name:'Tsubame Ya',dish:'Tempura e soba',note:'Uji · vicino alla stazione Keihan; verifica disponibilità.',query:'Tsubame Ya Uji Kyoto',source:'https://tabelog.com/en/kyoto/A2607/A260701/26027433/'},
+ {city:'Osaka',area:'Namba',name:'Hozenji Sanpei',dish:'Okonomiyaki e teppan',note:'Hozenji Yokocho · raccomandazione nella selezione Tabelog Osaka.',query:'Okonomiyaki Hozenji Sanpei Osaka',source:'https://tabelog.com/en/matome/31664/'},
+ {city:'Osaka',area:'Namba',name:'AT THE 21 Namba',dish:'Okonomiyaki dashi',note:'Ura-Namba · selezionato da Tabelog nella guida locale.',query:'AT THE 21 Namba Osaka',source:'https://tabelog.com/en/matome/31664/'},
+ {city:'Osaka',area:'Namba',name:'Takoyaki to Oden Tomono',dish:'Takoyaki al dashi e oden',note:'Namba · recensioni giapponesi riportate su Tabelog.',query:'Takoyaki to Oden Tomono Namba Osaka',source:'https://tabelog.com/en/matome/31869/'},
+ {city:'Osaka',area:'Umeda',name:'Okonomiyaki Kiji Honten',dish:'Okonomiyaki classico',note:'Umeda · selezione Tabelog 100 2025.',query:'Okonomiyaki Kiji Honten Osaka',source:'https://tabelog.com/en/osaka/A2701/A270101/27000297/'},
+ {city:'Nagoya',area:'Nagoya Station',name:'Yabaton ESCA',dish:'Miso-katsu di Nagoya',note:'ESCA presso Nagoya Station · specialità regionale.',query:'Yabaton ESCA Nagoya',source:'https://tabelog.com/en/aichi/A2301/A230101/23000136/'},
+ {city:'Nagoya',area:'Atsuta',name:'Atsuta Hōraiken',dish:'Hitsumabushi',note:'Nagoya · anguilla alla griglia, spesso affollato.',query:'Atsuta Horaiken Nagoya',source:'https://tabelog.com/en/matome/25169/'}
+];
+const DECEMBER_2026_EXTRAS = [
+ {cities:['Tokyo'],from:'2026-11-30',until:'2026-12-07',name:'PokéPeace POP-UP · NEWoMan Shinjuku',type:'🎮 Pokémon',query:'NEWoMan Shinjuku Tokyo',source:'https://collabo-cafe.com/en/events/collabo/pokemon-pokepeace-flowering-popup-2026/',note:'Evento temporaneo segnalato 16 nov–7 dic 2026; verifica eventuali cambi di orario.'},
+ {cities:['Kyoto'],from:'2026-12-08',until:'2026-12-14',name:'PokéPeace POP-UP · Kyoto Porta',type:'🎮 Pokémon',query:'Kyoto Porta Station',source:'https://collabo-cafe.com/en/events/collabo/pokemon-pokepeace-flowering-popup-2026/',note:'Evento temporaneo segnalato 25 nov–14 dic 2026 presso Kyoto Station.'}
+];
 const ARCHIVE_TYPES = [
     ['tea','🍵 Tè'], ['denim','👖 Denim'], ['science','🪐 Scienza'], ['gaming','🎮 Gaming'],
-    ['food','🍜 Cibo'], ['places','⛩️ Luoghi'], ['gadgets','🕹️ Gadget'], ['shops','🛍️ Negozi']
+    ['food','🍜 Cibo'], ['places','⛩️ Luoghi'], ['gadgets','🕹️ Gadget'], ['shops','🛍️ Negozi'], ['other','📌 Altro']
 ];
-const ARCHIVE_LABELS = {tea:'TÈ',denim:'DENIM',science:'SCIENZA',gaming:'GAMING',food:'CIBO',places:'LUOGHI',gadgets:'GADGET',shops:'NEGOZI'};
-const ARCHIVE_EMOJIS = {tea:'🍵',denim:'👖',science:'🪐',gaming:'🎮',food:'🍜',places:'⛩️',gadgets:'🕹️',shops:'🛍️'};
+const ARCHIVE_LABELS = {tea:'TÈ',denim:'DENIM',science:'SCIENZA',gaming:'GAMING',food:'CIBO',places:'LUOGHI',gadgets:'GADGET',shops:'NEGOZI',other:'ALTRO'};
+const ARCHIVE_EMOJIS = {tea:'🍵',denim:'👖',science:'🪐',gaming:'🎮',food:'🍜',places:'⛩️',gadgets:'🕹️',shops:'🛍️',other:'📌'};
 Object.assign(FIELD_SAMPLES, {
   food:{icon:'🍜',kind:'food',name:'Un piatto da riassaggiare',place:'Osaka · esempio',dish:'Okonomiyaki',flavour:'Umami, sapido',price:'1600',score:4,note:'ESEMPIO: descrivi consistenza, condimenti e se lo consiglieresti.'},
   places:{icon:'⛩️',kind:'places',name:'Un angolo di Kyoto',place:'Kyoto · esempio',area:'Higashiyama',why:'Atmosfera e architettura',score:5,note:'ESEMPIO: annota come raggiungerlo e il momento migliore della giornata.'},
   gadgets:{icon:'🕹️',kind:'gadgets',name:'Un oggetto interessante',place:'Akihabara · esempio',brand:'Nintendo',model:'Artbook',price:'2400',score:4,note:'ESEMPIO: specifica edizione, compatibilità o riferimento del prodotto.'},
-  shops:{icon:'🛍️',kind:'shops',name:'Negozio da ritrovare',place:'Ueno · esempio',shoptype:'Denim & high fashion',address:'Zona Ameyoko',url:'',score:5,note:'ESEMPIO: indirizzo, reparto interessante e cosa vale la pena cercare.'}
+  shops:{icon:'🛍️',kind:'shops',name:'Negozio da ritrovare',place:'Ueno · esempio',shoptype:'Denim & high fashion',address:'Zona Ameyoko',url:'',score:5,note:'ESEMPIO: indirizzo, reparto interessante e cosa vale la pena cercare.'},
+  other:{icon:'📌',kind:'other',name:'Una scoperta speciale',place:'Giappone · esempio',score:4,note:'ESEMPIO: qualunque idea non rientri nelle altre categorie.'}
 });
 const DEFAULT_LOVE_MESSAGE = 'Sono venuta fin qui per scoprire il Giappone. E invece una delle cose che preferisco di questo viaggio è molto più semplice: camminare con te, fermarci per un tè, discutere di cose improbabili e cambiare strada solo perché ci incuriosisce. Non so quale sarà il nostro prossimo viaggio, ma so che mi piacerebbe continuare a perdermi così, con te.';
 // App calendar anchored to Japan Standard Time, including when opened abroad.
@@ -2519,8 +2567,8 @@ function TripAtlasCanvas({places, selectedId, onSelect, routeStops, city, visibl
   setLocateText('📡 Ricerca GPS… Se richiesto, consenti la posizione all’app.');
   try {
    const pos=await japan24GetPosition(); const here=[pos.lat,pos.lon];setMyCoords(here);
-   if(mapInst.current&&window.L){mapInst.current.setView(here,15);window.L.circleMarker(here,{radius:8,color:'#fff',weight:3,fillColor:'#147cc1',fillOpacity:1}).addTo(mapInst.current).bindPopup('Sei qui').openPopup();}
-   setLocateText('📍 Posizione trovata. Non viene salvata né condivisa.');
+   if(mapInst.current&&window.L){mapInst.current.invalidateSize();mapInst.current.setView(here,16);window.L.circleMarker(here,{radius:8,color:'#fff',weight:3,fillColor:'#147cc1',fillOpacity:1}).addTo(mapInst.current).bindPopup('Sei qui').openPopup();}
+   setLocateText('📍 Posizione trovata ('+pos.lat.toFixed(5)+', '+pos.lon.toFixed(5)+'). Non condivisa.');
   }catch(error){setLocateText((error.message||'GPS non disponibile')+'. Puoi aprire Google Maps come alternativa.');}
  };
  const mapped=places.filter(x=>x.coords);
@@ -2539,7 +2587,7 @@ function TripAtlasCanvas({places, selectedId, onSelect, routeStops, city, visibl
    React.createElement('div',{className:'trip-atlas-map-actions'},
     useEmbedded ? React.createElement('a',{href:osmEmbed.full,target:'_blank',rel:'noopener noreferrer'},'↗ OpenStreetMap') : React.createElement('button',{type:'button',onClick:focusRoute},'⌖ Itinerario'),
     React.createElement('button',{type:'button',onClick:geo},'◎ Dove sono?'),
-    React.createElement('a',{href:'https://www.google.com/maps',target:'_blank',rel:'noopener noreferrer',title:'Alternativa se il browser o APK non concede il permesso GPS'},'↗ La mia posizione su Maps'))),
+    React.createElement('a',{href:myCoords?'https://www.google.com/maps/search/?api=1&query='+myCoords.join(','):'https://www.google.com/maps',target:'_blank',rel:'noopener noreferrer',title:'Alternativa se il browser o APK non concede il permesso GPS'},'↗ La mia posizione su Maps'))),
   useEmbedded ? React.createElement(React.Fragment,null,
    React.createElement('iframe',{className:'trip-atlas-embed',src:embedSrc,title:'Mappa OpenStreetMap di '+city,loading:'eager',referrerPolicy:'strict-origin-when-cross-origin'}),
    React.createElement('div',{className:'trip-atlas-embed-notice'},
@@ -2572,9 +2620,44 @@ function suggestedTripIndex(jpDate) {
 // Firestore holds only AES-GCM encrypted content; no shared secret is stored in the cloud.
 const Japan22Cloud = (() => {
     const STORE_PREFIX = 'japan2026:';
-    const SHARED_KEYS = ['quest','packing','expenses','notes','completedDays','teaTastings','favourites',
+    const SHARED_KEYS = ['quest','packing','expenses','sharedTravelNotes','completedDays','teaTastings','favourites',
         'fixedEventTimes','adventure','previewNotes','loveMessage'];
     const ROUTES_KEY = 'dayRoutesV19';
+    // V30: one encrypted Firestore entry per archive photograph, independent of the text archive.
+    const PHOTO_PREFIX='photo_';
+    const photoDocId = id => PHOTO_PREFIX+String(id||'');
+    const isPhotoDocId = id => /^photo_[A-Za-z0-9_-]{3,100}$/.test(id);
+    let suppressPhotoQueue=false;
+    const remotePhotos=new Map(),photoLocalFingerprints=new Map();
+    // Firestore has a 1 MiB document limit. Keep each encrypted, base64-encoded photo well below it.
+    const compactPhoto = async photo => {
+        if(photo===null || photo===undefined || photo==='') return null;
+        if(typeof photo!=='string' || !/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(photo))
+            throw new Error('Formato foto non valido. Usa JPG, PNG o WebP.');
+        if(photo.length<=175000) return photo;
+        return new Promise((resolve,reject)=>{
+            const img=new Image();
+            img.onload=()=>{
+                try{
+                    let best='';
+                    for(const edge of [900,720,560,430,320]){
+                        const scale=Math.min(1,edge/Math.max(img.naturalWidth||img.width,img.naturalHeight||img.height));
+                        const cv=document.createElement('canvas');
+                        cv.width=Math.max(1,Math.round(img.width*scale));
+                        cv.height=Math.max(1,Math.round(img.height*scale));
+                        cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+                        for(const q of [.76,.60,.45,.32]){
+                            best=cv.toDataURL('image/jpeg',q);
+                            if(best.length<=175000) return resolve(best);
+                        }
+                    }
+                    reject(new Error('Foto troppo grande anche dopo la compressione. Scegli un’immagine più piccola.'));
+                }catch(e){reject(e);}
+            };
+            img.onerror=()=>reject(new Error('Impossibile ridimensionare la foto.'));
+            img.src=photo;
+        });
+    };
     const INFO = { label:'Non collegato', stage:'off', connected:false, nickname:'', detail:'Tutti i dati sono sul dispositivo.' };
     const state = { ...INFO };
     const callbacks = new Set();
@@ -2678,7 +2761,7 @@ const Japan22Cloud = (() => {
         docRef=null; db=null; auth=null; tripId=null; cryptKey=null;
         auditSupported=false; auditError=''; activityFirstLoad=true;initWriteMode=false;recentActivity=[];
         activityCallbacks.forEach(cb=>{try{cb([]);}catch(e){}});
-        dirty.clear();lastValues.clear();currentInvite='';baselineFingerprints={};Object.keys(lastSeen).forEach(k=>delete lastSeen[k]);
+        dirty.clear();lastValues.clear();remotePhotos.clear();photoLocalFingerprints.clear();currentInvite='';baselineFingerprints={};Object.keys(lastSeen).forEach(k=>delete lastSeen[k]);
     };
     const makeKeys = async secret => {
         const keyBytes=await digest('japan22:encryption:'+secret);
@@ -2699,8 +2782,8 @@ const Japan22Cloud = (() => {
     };
     const keyIdFor = storeKey => storeKey===ROUTES_KEY ? ROUTES_KEY : storeKey;
     const sharedLocal = key => {
-        let v=readJapanStore(STORE_PREFIX+key, key==='notes'?'':(key==='loveMessage'?'':key==='dayRoutesV19'?{}:[]));
-        if(key==='previewNotes'&&Array.isArray(v))v=v.map(({photo,...note})=>note); // Photos remain only on this phone.
+        let v=readJapanStore(STORE_PREFIX+key, key==='loveMessage'?'':key==='dayRoutesV19'?{}:[]);
+        if(key==='previewNotes'&&Array.isArray(v))v=v.map(({photo,...note})=>note); // V30: metadata separate from encrypted photo documents.
         return v;
     };
     const localSnapshot = () => {
@@ -2718,6 +2801,10 @@ const Japan22Cloud = (() => {
         if(parsed?.format!=='japan2026-cloud-local-v1' || !parsed.data || typeof parsed.data!=='object')
             throw new Error('Questo non sembra un backup Japan 2026 V22 valido.');
         backupLocal();
+        if(Object.prototype.hasOwnProperty.call(parsed.data,'personalNotes')){
+          try{localStorage.setItem(STORE_PREFIX+'personalNotes',JSON.stringify(parsed.data.personalNotes));}catch(e){}
+          window.dispatchEvent(new CustomEvent('japan29:personal-note',{detail:parsed.data.personalNotes}));
+        }
         for(const key of [...SHARED_KEYS,ROUTES_KEY]){
             if(!Object.prototype.hasOwnProperty.call(parsed.data,key)) continue;
             const value=parsed.data[key];
@@ -2729,6 +2816,7 @@ const Japan22Cloud = (() => {
     };
     const downloadBackup = () => {
         const local=localSnapshot();
+        local.personalNotes=readJapanStore(STORE_PREFIX+'personalNotes',readJapanStore(STORE_PREFIX+'notes',''));
         // Full-size local photos are preserved in backup as well, within browser storage limits.
         local.previewNotes=readJapanStore(STORE_PREFIX+'previewNotes',[]);
         const blob=new Blob([JSON.stringify({format:'japan2026-cloud-local-v1',savedAt:new Date().toISOString(),data:local},null,2)],{type:'application/json'});
@@ -2738,9 +2826,9 @@ const Japan22Cloud = (() => {
     const entryKeysFor = key => key===ROUTES_KEY ? Array.from({length:19},(_,i)=>'route_'+i) : [key];
     const getValuesFor = (key,value) => key===ROUTES_KEY ? Array.from({length:19},(_,i)=>['route_'+i,(value||{})[i]||null]) : [[key,value]];
     const japan24DescribeChange=(id,oldVal,newVal)=>{
-      const labels={quest:'Quest Log',favourites:'Preferiti',packing:'Checklist',expenses:'Spese',notes:'Note',
+      const labels={quest:'Quest Log',favourites:'Preferiti',packing:'Checklist',expenses:'Spese',sharedTravelNotes:'Note condivise',
        completedDays:'Giornate completate',teaTastings:'Degustazioni tè',adventure:'Avventura',loveMessage:'Messaggio romantico',
-       fixedEventTimes:'Prenotazioni',previewNotes:'Archivio di Ugo'};
+       fixedEventTimes:'Prenotazioni',previewNotes:'Discovery Archive'};
       if(id.startsWith('route_')){
         const day=Number(id.slice(6))+1;
         const o=Array.isArray(oldVal)?oldVal:[],n=Array.isArray(newVal)?newVal:[];
@@ -2753,12 +2841,13 @@ const Japan22Cloud = (() => {
         const title=x=>String(x?.title||x?.name||x?.item||x?.place||x?.brand||x?.note||'una scoperta').slice(0,110);
         if(added.length===1 && removed.length===0)return 'Archivio · aggiunta: '+title(added[0]);
         if(removed.length===1 && added.length===0)return 'Archivio · eliminata: '+title(removed[0]);
-        return 'Archivio di Ugo · '+(added.length?'+'+added.length+' scoperte ':'')+(removed.length?'-'+removed.length+' eliminate':'schede aggiornate');
+        return 'Discovery Archive · '+(added.length?'+'+added.length+' scoperte ':'')+(removed.length?'-'+removed.length+' eliminate':'schede aggiornate');
       }
       if(id==='favourites'||id==='quest'){
         const o=Array.isArray(oldVal)?oldVal:[],n=Array.isArray(newVal)?newVal:[];
         return labels[id]+' · '+(n.length>o.length?'aggiunto un luogo':n.length<o.length?'rimosso un luogo':'modificato');
       }
+      if(id==='sharedTravelNotes'){const oldList=Array.isArray(oldVal)?oldVal:[],nextList=Array.isArray(newVal)?newVal:[];return nextList.length>oldList.length?'Note condivise · aggiunta':nextList.length<oldList.length?'Note condivise · eliminata':'Note condivise · modifica';}
       return (labels[id]||id)+' · aggiornamento';
     };
     const onLocalValue = (storageKey,value) => {
@@ -2768,15 +2857,40 @@ const Japan22Cloud = (() => {
         const key=storageKey.slice(STORE_PREFIX.length);
         if(!SHARED_KEYS.includes(key)&&key!==ROUTES_KEY)return;
         const safe=key==='previewNotes' && Array.isArray(value) ? value.map(({photo,...note})=>note) : value;
+        let archiveMetadataChanged=false;
         for(const [id,entryValue] of getValuesFor(key,safe)){
             const fingerprint=stringify(entryValue);
             const previousFingerprint=ready?lastSeen[id]:stored('syncedFingerprints',{})[id];
             if(fingerprint===previousFingerprint)continue;
+            if(id==='previewNotes')archiveMetadataChanged=true;
             if(ready)lastSeen[id]=fingerprint;
             const previous=lastValues.get(id);
             const summary=japan24DescribeChange(id,previous,entryValue);
             dirty.set(id,{value:entryValue,summary});
             lastValues.set(id,entryValue);
+        }
+        if(key==='previewNotes' && Array.isArray(value) && !suppressPhotoQueue){
+            const currentIds=new Set();
+            for(const entry of value){
+                if(!entry || !isPhotoDocId(photoDocId(entry.id)))continue;
+                const id=photoDocId(entry.id);
+                currentIds.add(id);
+                const photo=entry.photo || null;
+                const fingerprint=stringify(photo);
+                if(photoLocalFingerprints.get(id)===fingerprint)continue;
+                const previous=ready?lastSeen[id]:stored('syncedFingerprints',{})[id];
+                photoLocalFingerprints.set(id,fingerprint);
+                if(fingerprint===previous || (!photo && previous===undefined))continue;
+                // Only queue a photo write if the image actually changed or was removed.
+                dirty.set(id,{value:photo,summary:photo?'Archivio · fotografia aggiornata':'Archivio · fotografia rimossa',silentActivity:archiveMetadataChanged});
+                if(ready)lastSeen[id]=fingerprint;
+            }
+            for(const [id,fp] of photoLocalFingerprints){
+                if(!isPhotoDocId(id)||currentIds.has(id)||fp===stringify(null))continue;
+                dirty.set(id,{value:null,summary:'Archivio · fotografia rimossa',silentActivity:archiveMetadataChanged});
+                photoLocalFingerprints.set(id,stringify(null));
+                if(ready)lastSeen[id]=stringify(null);
+            }
         }
         if(dirty.size){storePending();emit({stage:ready?(navigator.onLine?'syncing':'offline'):'offline',label:ready?(navigator.onLine?'Modifiche in attesa':'Offline · modifiche locali'):'Modifiche salvate in attesa di riconnessione',pending:dirty.size});
             if(ready){clearTimeout(sendTimer);sendTimer=setTimeout(flushWrites,850);}}
@@ -2786,6 +2900,24 @@ const Japan22Cloud = (() => {
         const fp=stringify(value);
         if(lastSeen[id]===fp)return;
         lastSeen[id]=fp;lastValues.set(id,value);rememberSynced(id,value);
+        if(isPhotoDocId(id)){
+            const entryId=id.slice(PHOTO_PREFIX.length);
+            const photo=(typeof value==='string' && /^data:image\/(?:jpeg|png|webp);base64,/.test(value))?value:null;
+            remotePhotos.set(entryId,photo); // Document may arrive before its archive entry.
+            photoLocalFingerprints.set(id,stringify(photo));
+            const list=readJapanStore(STORE_PREFIX+'previewNotes',[]);
+            if(Array.isArray(list)&&list.some(n=>String(n.id)===entryId)){
+                const changed=list.some(n=>String(n.id)===entryId && (n.photo||null)!==photo);
+                if(changed){
+                    const next=list.map(n=>String(n.id)===entryId?(photo?{...n,photo}:({...n,photo:undefined})):n);
+                    suppressPhotoQueue=true;
+                    try{writeJapanStore(STORE_PREFIX+'previewNotes',next);}
+                    finally{suppressPhotoQueue=false;}
+                    window.dispatchEvent(new CustomEvent('japan22:remote',{detail:{key:'previewNotes',value:next,by}}));
+                }
+            }
+            return;
+        }
         if(by && by!==stored('name','Silvia/Ugo')){
           lastRemoteChange=new Date().toISOString();lastRemoteAuthor=by;
         }
@@ -2801,10 +2933,21 @@ const Japan22Cloud = (() => {
         let merged=value;
         if(id==='previewNotes' && Array.isArray(value)){
             const local=readJapanStore(STORE_PREFIX+'previewNotes',[]);
-            const photos=new Map((Array.isArray(local)?local:[]).filter(n=>n.photo).map(n=>[n.id,n.photo]));
-            merged=value.map(n=>photos.has(n.id)?{...n,photo:photos.get(n.id)}:n);
+            const photos=new Map((Array.isArray(local)?local:[]).filter(n=>n.photo).map(n=>[String(n.id),n.photo]));
+            merged=value.map(n=>{
+                const key=String(n.id);
+                if(remotePhotos.has(key)) return remotePhotos.get(key)?{...n,photo:remotePhotos.get(key)}:{...n,photo:undefined};
+                return photos.has(key)?{...n,photo:photos.get(key)}:n;
+            });
         }
-        writeJapanStore(STORE_PREFIX+id,merged);
+        if(id==='previewNotes'){
+            suppressPhotoQueue=true;
+            const entries=new Set(merged.map(n=>photoDocId(n.id)));
+            for(const key of photoLocalFingerprints.keys())if(!entries.has(key))photoLocalFingerprints.delete(key);
+            for(const n of merged)if(isPhotoDocId(photoDocId(n.id)))photoLocalFingerprints.set(photoDocId(n.id),stringify(n.photo||null));
+        }
+        try{writeJapanStore(STORE_PREFIX+id,merged);}
+        finally{if(id==='previewNotes')suppressPhotoQueue=false;}
         window.dispatchEvent(new CustomEvent('japan22:remote',{detail:{key:id,value:merged,by}}));
     };
     const consumeSnapshot = async (snap,g) => {
@@ -2813,7 +2956,7 @@ const Japan22Cloud = (() => {
         for(const doc of docs){
             if(g!==generation)return;
             const id=doc.id;
-            if(!(SHARED_KEYS.includes(id)||/^route_(?:[0-9]|1[0-8])$/.test(id)))continue;
+            if(!(SHARED_KEYS.includes(id)||/^route_(?:[0-9]|1[0-8])$/.test(id)||isPhotoDocId(id)))continue;
             try {
                 const obj=doc.data();
                 const payload=await decryptValue(obj);
@@ -2878,11 +3021,15 @@ const Japan22Cloud = (() => {
             const value=record.value;
             if(g!==generation)break;
             try{
-                const enc=await encryptValue({value,by:stored('name','Silvia/Ugo').slice(0,40)});
-                if(enc.ciphertext.length>600000)throw new Error('La sezione '+id+' supera il limite cloud (foto escluse).');
+                const uploadValue=isPhotoDocId(id)?await compactPhoto(value):value;
+                const enc=await encryptValue({value:uploadValue,by:stored('name','Silvia/Ugo').slice(0,40)});
+                if(enc.ciphertext.length>600000)throw new Error('La sezione '+id+' supera il limite cloud.');
                 await docRef.collection('entries').doc(id).set({...enc,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
                 if(dirty.has(id)&&stringify(dirty.get(id)?.value)===stringify(value))dirty.delete(id);
-                if(!dirty.has(id))rememberSynced(id,value);
+                if(!dirty.has(id)){
+                    if(isPhotoDocId(id))lastSeen[id]=stringify(uploadValue);
+                    rememberSynced(id,uploadValue);
+                }
                 if(!initWriteMode && !record.silentActivity && record.summary !== 'Modifica offline recuperata'){
                     try{await sendActivity(id,record.summary||japan24DescribeChange(id,null,value));}
                     catch(e){auditError='Registro non aggiornato: '+(e.message||String(e));emit({});}
@@ -2935,7 +3082,15 @@ const Japan22Cloud = (() => {
             // Load durable unsent changes BEFORE reading remote state: never overwrite offline edits.
             const storedPending=stored('pendingTrip','')===parsed.code ? stored('pending',{}) : {};
             if(!isNew)for(const [id,v] of Object.entries(storedPending||{}))
-                if(SHARED_KEYS.includes(id)||/^route_(?:[0-9]|1[0-8])$/.test(id))dirty.set(id,{value:v,silentActivity:true});
+                if(SHARED_KEYS.includes(id)||/^route_(?:[0-9]|1[0-8])$/.test(id)||isPhotoDocId(id))dirty.set(id,{value:v,silentActivity:true});
+            // Keep already-saved images in memory before applying the remote archive metadata.
+            const preConnectPhotos=new Map();
+            const oldArchive=readJapanStore(STORE_PREFIX+'previewNotes',[]);
+            if(Array.isArray(oldArchive))for(const n of oldArchive)
+                if(isPhotoDocId(photoDocId(n?.id))){
+                    photoLocalFingerprints.set(photoDocId(n.id),stringify(n.photo||null));
+                    if(n.photo)preConnectPhotos.set(String(n.id),n.photo);
+                }
             const initial=await docRef.collection('entries').get({source:'server'});
             lastServerRead=new Date().toISOString();
             if(g!==generation)return;
@@ -2946,6 +3101,17 @@ const Japan22Cloud = (() => {
                 const content=localSnapshot();
                 for(const key of SHARED_KEYS)dirty.set(key,{value:content[key],summary:'Dati condivisi importati'});
                 for(let i=0;i<19;i++)dirty.set('route_'+i,{value:(content.dayRoutesV19||{})[i]||null,summary:'Import iniziale'});
+            }
+            // V30 migration: upload previously-local photos only if that archive entry still
+            // exists in the shared trip AND there is no cloud photo document or deletion tombstone.
+            // This never replaces an image already uploaded from the other phone.
+            const existingPhotoIds=new Set(initial.docs.filter(d=>isPhotoDocId(d.id)).map(d=>d.id));
+            const sharedArchive=readJapanStore(STORE_PREFIX+'previewNotes',[]);
+            const actualIds=new Set((Array.isArray(sharedArchive)?sharedArchive:[]).map(n=>String(n.id)));
+            for(const [entryId,photo] of preConnectPhotos){
+                const id=photoDocId(entryId);
+                if(!actualIds.has(entryId)||existingPhotoIds.has(id)||dirty.has(id))continue;
+                dirty.set(id,{value:photo,summary:'Archivio · fotografia condivisa',silentActivity:true});
             }
             unsubscribe=docRef.collection('entries').onSnapshot(s=>{
                 snapshotQueue=snapshotQueue.then(()=>consumeSnapshot(s,g)).catch(e=>emit({stage:'error',label:'Lettura cloud non riuscita',detail:e.message||String(e)}));
@@ -3120,15 +3286,24 @@ function Japan24ActivityPage({status,onRefresh}){
    await Japan22Cloud.refreshNow();setMessage('✓ Aggiornato dal server');
  }catch(e){setMessage('⚠ '+(e.message||String(e)));}finally{setWorking(false);}};
  const format=iso=>iso?new Date(iso).toLocaleString('it-IT',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'Non ancora';
- const icon=id=>id==='previewNotes'?'📒':id?.startsWith('route_')?'🗓️':id==='favourites'?'⭐':id==='notes'?'📝':id==='quest'?'🧭':'✨';
- const visibleHistory=(Array.isArray(history)?history:[])
-   .filter(event=> !/modifica offline recuperata/i.test(event?.description||''))
-   .filter(event=>filter==='all'||(ownName && String(event.by||'').toLocaleLowerCase()!==ownName.toLocaleLowerCase()));
+ const icon=id=>id==='previewNotes'?'📒':id?.startsWith('route_')?'🗓️':id==='favourites'?'⭐':id==='sharedTravelNotes'?'📝':id==='quest'?'🧭':'✨';
+ const visibleHistory=(()=>{
+    const sorted=(Array.isArray(history)?history:[]).filter(e=>!/modifica offline recuperata|import iniziale|dati condivisi importati/i.test(e?.description||''))
+       .filter(e=>filter==='all'||(ownName&&String(e.by||'').toLowerCase()!==ownName.toLowerCase()))
+       .sort((a,b)=>new Date(b.at||0)-new Date(a.at||0));
+    const recent=new Map(),out=[];
+    for(const e of sorted){
+       const bucket=Math.floor(new Date(e.at||0).getTime()/(30*60*1000));
+       const signature=[e.id||'',e.by||'',bucket].join('|');
+       if(recent.has(signature)){recent.get(signature).updates=(recent.get(signature).updates||1)+1;continue;}
+       const entry={...e,updates:1};recent.set(signature,entry);out.push(entry);
+    }return out.slice(0,30);
+ })();
  const connected=!!status.connected;
  return R('section',{className:'j24-activity-page j28-updates'},
    R('header',{className:'j24-hero j28-hero'},
      R('div',null,R('h2',null,'10. 📣 Updates'),
-       R('p',null,'Le ultime novità del vostro viaggio.')),
+       R('p',null,'Solo le modifiche recenti, senza notifiche ripetute.')),
      R('button',{className:'j24-sync-button',type:'button',disabled:working,onClick:refresh},working?'Aggiorno…':'↻ Aggiorna')),
    R('div',{className:'j28-status-strip',role:'status'},
      R('span',{className:'j28-status-dot '+(connected?'ok':'off')}),
@@ -3149,12 +3324,12 @@ function Japan24ActivityPage({status,onRefresh}){
      visibleHistory.length?R('ol',{className:'j24-events j28-events'},visibleHistory.map(event=>R('li',{key:event.recordId,className:'j24-event'},
        R('span',{className:'j24-event-icon','aria-hidden':'true'},icon(event.id)),
        R('div',{className:'j24-event-body'},R('strong',null,event.description||'Modifica condivisa'),
-         R('small',null,(event.by||'Dispositivo collegato')+' · '+format(event.at)))))):
+         R('small',null,(event.by||'Dispositivo collegato')+' · '+format(event.at)+(event.updates>1?' · '+event.updates+' modifiche':'') ))))):
        R('p',{className:'j28-empty'},filter==='others'?'Nessuna modifica dall’altro dispositivo.':'Ancora nessuna modifica registrata.')),
    R('details',{className:'j28-diagnostics'},
      R('summary',null,'Dettagli sincronizzazione'),
      R('div',{className:'j28-diagnostics-body'},
-       R('p',null,'Viaggio: '+(status.tripTag||'—')+' · Versione: V28'),
+       R('p',null,'Viaggio: '+(status.tripTag||'—')+' · Versione: V29'),
        R('p',null,'Ultima modifica ricevuta: '+(status.lastRemoteAuthor||'—')+' · '+format(status.lastRemoteChange)),
        R('p',null,'Se manca qualcosa, verificate lo stesso viaggio su entrambi i telefoni e premete Aggiorna. Le fotografie non sono condivise.'))));
 }
@@ -3215,7 +3390,9 @@ function App() {
     const [expenseItems, setExpenseItems] = React.useState(() => readJapanStore('japan2026:expenses', []));
     const [fxRate, setFxRate] = React.useState(() => { const saved = readJapanStore('japan2026:fxRate', null); return saved === null || String(saved) === '200' ? '211.26' : String(saved); });
     const [fxRateEUR, setFxRateEUR] = React.useState(() => readJapanStore('japan2026:fxRateEUR', '176.83'));
-    const [travelNotes, setTravelNotes] = React.useState(() => readJapanStore('japan2026:notes', ''));
+    const [travelNotes, setTravelNotes] = React.useState(() => readJapanStore('japan2026:personalNotes', readJapanStore('japan2026:notes', '')));
+    const [sharedTravelNotes,setSharedTravelNotes]=React.useState(()=>readJapanStore('japan2026:sharedTravelNotes', []));
+    const [sharedNoteDraft,setSharedNoteDraft]=React.useState('');
     const [completedDays, setCompletedDays] = React.useState(() => readJapanStore('japan2026:completedDays', {}));
     const [teaTastings, setTeaTastings] = React.useState(() => readJapanStore('japan2026:teaTastings', []));
     const [favourites, setFavourites] = React.useState(() => {
@@ -3241,11 +3418,12 @@ function App() {
         writeJapanStore('japan2026:fxRate', fxRate);
         writeJapanStore('japan2026:fxRateEUR', fxRateEUR);
         writeJapanStore('japan2026:theme', theme);
-        writeJapanStore('japan2026:notes', travelNotes);
+        try { localStorage.setItem('japan2026:personalNotes',JSON.stringify(travelNotes)); } catch(e) {} // PRIVATE: never send to Firebase
+        writeJapanStore('japan2026:sharedTravelNotes',sharedTravelNotes);
         writeJapanStore('japan2026:completedDays', completedDays);
         writeJapanStore('japan2026:teaTastings', teaTastings);
         writeJapanStore('japan2026:favourites', favourites);
-    }, [userPicks, packingItems, expenseItems, fxRate, fxRateEUR, theme, travelNotes, completedDays, teaTastings, favourites]);
+    }, [userPicks, packingItems, expenseItems, fxRate, fxRateEUR, theme, travelNotes, sharedTravelNotes, completedDays, teaTastings, favourites]);
     React.useEffect(() => {
         const updateOnline = () => setOnline(navigator.onLine);
         window.addEventListener('online', updateOnline);
@@ -3264,7 +3442,7 @@ function App() {
     const [journalKind, setJournalKind] = React.useState('tea');
     const [journalEditing, setJournalEditing] = React.useState(null);
     const [archiveEditorOpen, setArchiveEditorOpen] = React.useState(false);
-    const [journalForm, setJournalForm] = React.useState({ kind: 'tea', score: 4, umami: 3, roast: 3 });
+    const [journalForm, setJournalForm] = React.useState({ kind: 'tea', date: japanLocalISO(), score: 4, umami: 3, roast: 3 });
     const [journalSearch, setJournalSearch] = React.useState('');
     const [journalFavorites, setJournalFavorites] = React.useState(false);
     const [loveStep, setLoveStep] = React.useState(0);
@@ -3338,6 +3516,7 @@ function App() {
     // Filters
     const [plannerCityFilter, setPlannerCityFilter] = React.useState('all');
     const [plannerSelectedDay,setPlannerSelectedDay] = React.useState(()=>suggestedTripIndex(japanLocalISO()));
+    const [plannerWorkspace,setPlannerWorkspace]=React.useState('day');
     const [plannerIdeasFilter,setPlannerIdeasFilter] = React.useState('all');
     const [plannerIdeasMore,setPlannerIdeasMore] = React.useState(false);
     const [plannerNewStop,setPlannerNewStop] = React.useState('');
@@ -3349,7 +3528,7 @@ function App() {
     const [dayEditorsOpen, setDayEditorsOpen] = React.useState({});
     const [daySuggestionFilters, setDaySuggestionFilters] = React.useState({});
     const [dayNewStopInputs, setDayNewStopInputs] = React.useState({});
-    // Trip Atlas V20: same source of truth as 19 Day Planner (dayRoutesV19).
+    // Trip Atlas V20: same source of truth as Planner & Mappa (dayRoutesV19).
     const [atlasDayIdx,setAtlasDayIdx] = React.useState(() => suggestedTripIndex(japanLocalISO()));
     const [atlasSearch,setAtlasSearch] = React.useState('');
     const [atlasCategory,setAtlasCategory] = React.useState('all');
@@ -3366,7 +3545,7 @@ function App() {
             const {key,value} = event.detail || {};
             const setters = {
                 quest:setUserPicks, packing:setPackingItems, expenses:setExpenseItems,
-                notes:setTravelNotes, completedDays:setCompletedDays, teaTastings:setTeaTastings,
+                sharedTravelNotes:setSharedTravelNotes, completedDays:setCompletedDays, teaTastings:setTeaTastings,
                 favourites:setFavourites, fixedEventTimes:setFixedEventTimes,
                 adventure:setQuestProgress, previewNotes:setPreviewNotes, loveMessage:setLoveMessage,
                 dayRoutesV19:setCustomDayRoutes
@@ -3374,9 +3553,11 @@ function App() {
             if (setters[key]) setters[key](() => value);
         };
         window.addEventListener('japan22:remote',applyCloud);
+        const personalRestore=e=>setTravelNotes(e.detail||'');
+        window.addEventListener('japan29:personal-note',personalRestore);
         const stop=Japan22Cloud.subscribe(setCloudInfo);
         Japan22Cloud.autoReconnect();
-        return () => { window.removeEventListener('japan22:remote',applyCloud);stop(); };
+        return () => { window.removeEventListener('japan22:remote',applyCloud);window.removeEventListener('japan29:personal-note',personalRestore);stop(); };
     }, []);
 
 
@@ -4991,24 +5172,24 @@ function App() {
     ];
     // 7. AUTUMN FOLIAGE (JMC 2026 FORECAST) + DECEMBER SPECIALS
     const jmcForecastRows = [
-        { city: 'Tokyo', red: '30 nov', yellow: '29 nov', note: 'Inizio soggiorno: priorità a Rikugien e Meiji Jingu Gaien' },
-        { city: 'Nagoya', red: '4 dic', yellow: '20 nov', note: 'Arrivo 7 dic: possibile fase finale aceri rossi' },
-        { city: 'Kyoto', red: '14 dic', yellow: '30 nov', note: 'Soggiorno 8–11 dic: finestra perfetta per i rossi tardivi!' },
-        { city: 'Osaka', red: '6 dic', yellow: '27 nov', note: 'Soggiorno 11–17 dic: fase post-picco + inizio luminarie invernali' }
+        { city: 'Tokyo', red: 'fine nov–inizio dic', yellow: 'fine novembre', note: 'Inizio soggiorno: provate Rikugien e i ginkgo; colore da verificare giorno per giorno' },
+        { city: 'Nagoya', red: 'fine nov–inizio dic', yellow: 'novembre', note: '7 dicembre: forse ultimi colori nei giardini, senza garanzia di picco' },
+        { city: 'Kyoto', red: 'fine nov–inizio dic', yellow: 'novembre', note: '8–11 dicembre: alcuni giardini riparati possono conservare colori; controllare Kyoto Travel' },
+        { city: 'Osaka', red: 'fine nov–inizio dic', yellow: 'novembre', note: '11–17 dicembre: spesso oltre il picco; preferite luci invernali e passeggiate' }
     ];
     const tripFoliageWindows = [
         {
             id: 'win_rikugien',
             title: 'Tokyo · Rikugien Garden',
-            subtitle: 'Illuminazione 25 nov–6 dic, 18:00–20:30. Priorità assoluta nei primi giorni del soggiorno (30 Nov – 6 Dic).',
+            subtitle: 'Rikugien è una buona priorità nei primi giorni; per illuminazioni, orari e foliage consultate il sito ufficiale del giardino.',
             city: 'Tokyo',
-            badge: '🍁 Picco 30 Nov',
+            badge: '🍁 Da controllare',
             mapQuery: 'Rikugien Garden Tokyo'
         },
         {
             id: 'win_tokugawaen',
             title: 'Nagoya · Tokugawaen & Noritake Garden',
-            subtitle: 'Festival 14 nov–6 dic. La vostra data in città è il 7 dicembre: ultimi colori autunnali nei giardini feudali.',
+            subtitle: 'Il 7 dicembre potreste trovare foglie residue: consideratela una passeggiata, non un appuntamento di picco.',
             city: 'Nagoya',
             badge: '🍂 7–8 Dic',
             mapQuery: 'Tokugawaen Garden Nagoya'
@@ -5016,15 +5197,15 @@ function App() {
         {
             id: 'win_kyoto_botanical',
             title: 'Kyoto · Botanical Garden & Tofuku-ji',
-            subtitle: 'Night Garden 14 nov–13 dic, 18:00–21:30. Combacia perfettamente con il vostro soggiorno a Kyoto dall’8 all’11 dicembre!',
+            subtitle: 'Giardino botanico e Tōfuku-ji: controllate aperture e colori alla data di visita; le luci stagionali possono avere orari diversi.',
             city: 'Kyoto',
-            badge: '✨ Match Perfetto 8–11 Dic',
+            badge: '🍁 Possibili ultimi colori',
             mapQuery: 'Kyoto Botanical Gardens'
         },
         {
             id: 'win_uji_byodoin',
             title: 'Uji · Byōdō-in, Kosho-ji & Arashiyama',
-            subtitle: 'Controllate il calendario locale per ammirare gli ultimi aceri tardivi lungo il pendio Kotozaka di Uji il 16 dicembre.',
+            subtitle: 'Il 16 dicembre la stagione degli aceri può essere terminata: godetevi Uji soprattutto per tè, fiume e Byōdō-in.',
             city: 'Uji / Kyoto',
             badge: '🍵 11 & 16 Dic',
             mapQuery: 'Byodoin Temple Uji'
@@ -5181,16 +5362,25 @@ function App() {
             window.prompt('Copia questa frase giapponese:', text);
         }
     };
-    const speakJapanese = (text) => {
-        if (!('speechSynthesis' in window)) {
-            showToast('Sintesi vocale non disponibile su questo dispositivo');
-            return;
+    const speakJapanese = async (text) => {
+        const native=window.Capacitor?.isNativePlatform?.() && window.Capacitor?.Plugins?.TextToSpeech;
+        if(native){
+            try{await native.stop();await native.speak({text,lang:'ja-JP',rate:0.82,pitch:1,volume:1,category:'ambient'});return;}
+            catch(e){showToast('Audio Android: '+(e.message||'controlla che sia installata una voce giapponese'));}
         }
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'ja-JP';
-        utterance.rate = 0.88;
-        window.speechSynthesis.speak(utterance);
+        if(!('speechSynthesis' in window)||typeof window.SpeechSynthesisUtterance==='undefined'){
+            showToast('Audio non disponibile. Sul telefono installa il motore Testo in voce e una voce giapponese.');return;
+        }
+        try{
+            window.speechSynthesis.cancel();
+            const voices=window.speechSynthesis.getVoices();
+            const ja=voices.find(v=>/^ja([-_]|$)/i.test(v.lang));
+            const utterance=new SpeechSynthesisUtterance(text);
+            utterance.lang='ja-JP';utterance.rate=0.86;if(ja)utterance.voice=ja;
+            utterance.onerror=()=>showToast('Audio non disponibile: verifica le voci giapponesi nelle impostazioni del telefono.');
+            window.speechSynthesis.speak(utterance);
+            if(!ja)showToast('Se non senti audio, installa una voce giapponese nelle impostazioni Testo in voce.');
+        }catch(e){showToast('Sintesi vocale non disponibile: '+(e.message||'errore'));}
     };
     const buildGoogleMultiStopUrl = (stopsArray, originStr = null, mode = 'walking') => {
         if (!stopsArray || stopsArray.length === 0)
@@ -5419,12 +5609,17 @@ function App() {
         if(booking && [stops[position],stops[target]].some(x=>canonicalRouteStop(x)===booking))return;
         [stops[position],stops[target]]=[stops[target],stops[position]];setDayStops(idx,stops);
     };
-    const showDayInPlanner = idx => {
+    const showDayInPlanner = idx => {setPlannerWorkspace('day');setAtlasDayIdx(idx);
         setPlannerSelectedDay(idx);setPlannerCityFilter('all');setExpandedDays(prev=>({...prev,[idx]:true}));
         setActiveTab('planner');window.scrollTo?.({top:0,behavior:'smooth'});
     };
 
-    const showDayInAtlas = idx => {setAtlasDayIdx(idx);setAtlasSearch('');setAtlasCategory('all');setAtlasSelectedId('');setAtlasMobilePane('map');setActiveTab('route');window.scrollTo?.({top:0,behavior:'smooth'});};
+    const showDayInAtlas = idx => {setAtlasDayIdx(idx);setPlannerSelectedDay(idx);setPlannerWorkspace('map');setAtlasSearch('');setAtlasCategory('all');setAtlasSelectedId('');setAtlasMobilePane('map');setActiveTab('planner');window.scrollTo?.({top:0,behavior:'smooth'});};
+    const renderPlannerWorkspace = () => React.createElement('div',{className:'j29-workspace'},
+      React.createElement('div',{className:'j29-workspace-nav',role:'tablist','aria-label':'Il nostro viaggio: calendario o mappa'},
+        React.createElement('button',{type:'button',role:'tab','aria-selected':plannerWorkspace==='day',className:plannerWorkspace==='day'?'active':'',onClick:()=>{setPlannerWorkspace('day');setPlannerSelectedDay(atlasDayIdx);}},'🗓️ Giornata & idee vicine'),
+        React.createElement('button',{type:'button',role:'tab','aria-selected':plannerWorkspace==='map',className:plannerWorkspace==='map'?'active':'',onClick:()=>{setPlannerWorkspace('map');setAtlasDayIdx(plannerSelectedDay);setAtlasMobilePane('map');}},'🗺️ Mappa & percorsi')),
+      plannerWorkspace==='map'?renderTripAtlasTab():renderPlannerTab());
     const renderPlannerTab = () => {
         const R=React.createElement;
         const idx=Math.max(0,Math.min(18,plannerSelectedDay));
@@ -5506,6 +5701,13 @@ function App() {
               R('div',{className:'jp23-filters'},categories.map(([k,txt])=>R('button',{key:k,type:'button',onClick:()=>{setPlannerIdeasFilter(k);setPlannerIdeasMore(false);},className:plannerIdeasFilter===k?'active':'','aria-pressed':plannerIdeasFilter===k},txt))),
               R('div',{className:'jp23-ideas'},visibleIdeas.length?visibleIdeas.map(selectCard):R('div',{className:'jp23-empty'},'Nessun extra disponibile con questo filtro. Cambia categoria oppure aggiungi un posto a mano nella lista a sinistra.')),
               ideas.length>7&&R('button',{type:'button',className:'jp23-more',onClick:()=>setPlannerIdeasMore(x=>!x)},plannerIdeasMore?'Mostra meno ↑':'Altre '+(ideas.length-7)+' idee ↓'),
+              R('section',{className:'j29-locals'},
+                R('h4',null,'🍜 Dove mangiare · voci da Tabelog'),
+                R('p',{className:'j29-note-hint'},'Scelte da Tabelog, piattaforma di recensioni usata in Giappone. Non possiamo verificare che ogni recensione sia scritta da una persona giapponese; controllate distanza e orari.'),
+                LOCAL_FOOD_JP.filter(p=>p.city===day.city || (day.city==='Kyoto'&&p.city==='Uji'&&idx===16) || (day.city==='Osaka'&&p.city==='Uji'&&idx===16)).slice(0,5).map(p=>R('article',{key:p.name,className:'j29-food-card'},
+                  R('strong',null,p.name),R('small',null,p.dish+' · '+p.area),R('p',null,p.note),
+                  R('div',null,R('a',{href:p.source,target:'_blank',rel:'noopener noreferrer'},'Recensioni Tabelog ↗'),R('button',{type:'button',onClick:()=>addDayStop(idx,p.query)},'＋ Nel giorno'))))),
+              DECEMBER_2026_EXTRAS.filter(e=>e.cities.includes(day.city)&&TRIP_CALENDAR_2026[idx]>=e.from&&TRIP_CALENDAR_2026[idx]<=e.until).map(e=>R('article',{key:e.name,className:'j29-seasonal-card'},R('strong',null,e.type+' · '+e.name),R('p',null,e.note),R('a',{href:e.source,target:'_blank',rel:'noopener noreferrer'},'Fonte evento ↗'),R('button',{type:'button',onClick:()=>addDayStop(idx,e.query)},'＋ Inserisci'))),
               extra.food&&extra.food.length>0&&R('details',{className:'jp23-food'},R('summary',null,'🍜 Dove mangiare · '+extra.food.length+' suggerimenti'),
                 extra.food.map((p,i)=>R('div',{key:i},R('strong',null,p.name),R('p',null,p.note),R('button',{type:'button',onClick:()=>addDayStop(idx,p.mapQuery)},'＋ Inserisci nel giorno')))),
               R('p',{className:'jp23-nearby-note'},'Le proposte sono selezionate per zona, non ordinate per minuti a piedi. Verificate su Google Maps orari, distanze e disponibilità.')));
@@ -5593,7 +5795,7 @@ function App() {
           R('div',null,
             R('div',{className:'trip-atlas-eyebrow'},'JAPAN 2026 · SILVIA & UGO'),
             R('h2',null,'🗺️ Trip Atlas ',R('span',null,'& Route Designer')),
-            R('p',null,'Scopri i luoghi, guardali sulla mappa e costruisci le giornate. Una sola lista di tappe, condivisa con il 19 Day Planner.')),
+            R('p',null,'Scopri i luoghi, guardali sulla mappa e costruisci le giornate. Una sola lista di tappe, condivisa con il Planner & Mappa.')),
           R('div',{className:'trip-atlas-hero-stats'},R('span',null,'🗓️ 19 giorni'),R('span',null,'★ '+favourites.length+' preferiti'),R('span',null,'🎟️ Prenotazioni protette')));
         const daybar=R('div',{className:'trip-atlas-daybar'},
           R('div',{className:'trip-atlas-daypicker'},
@@ -5836,13 +6038,13 @@ function App() {
 
     const navTabs = [
         { id: 'hotels', label: '1. 🎮 START', short: 'Start' },
-        { id: 'planner', label: '2. 🗓️ 19 Day Planner', short: 'Planner' },
+        { id: 'planner', label: '2. 🗓️ Planner & Mappa', short: 'Planner' },
         { id: 'magical', label: '3. ✨ Interessi', short: 'Interessi' },
         { id: 'uji', label: '4. 🍵 Uji Tea', short: 'Uji Tea' },
         { id: 'romantic', label: '5. 💖 WOW', short: 'WOW' },
         { id: 'autumn', label: '6. 🍁 Must-do in Autumn', short: 'Autumn' },
-        { id: 'archive', label: '7. 📒 Ugo’s Discovery Archive', short: 'Archive' },
-        { id: 'route', label: `8. 🗺️ Trip Atlas (${userPicks.length})`, short: 'Atlas' },
+        { id: 'archive', label: '7. 📒 Discovery Archive', short: 'Archive' },
+        { id: 'route', label: `8. 🗺️ Mappa (Planner)`, short: 'Mappa' },
         { id: 'travelkit', label: '9. 🎒 Travel Kit', short: 'Kit' },
         { id: 'activity', label: '10. 📣 Updates', short: '📣 Updates' }
     ];
@@ -5880,17 +6082,17 @@ function App() {
                         React.createElement("button", { onClick: () => setFavouritesOpen(true), className: 'favourites-launch header-chip header-chip--icon', title: 'Apri i preferiti', 'aria-label': `Apri i preferiti: ${favourites.length} luoghi` },
                             React.createElement('span', {className:'favourites-launch-star header-chip-glyph','aria-hidden':true}, '★'),
                             React.createElement('span', {className:'favourites-launch-count header-count','aria-hidden':true}, favourites.length)),
-                        React.createElement("button", { onClick: () => { setActiveTab('route'); setMobileMenuOpen(false); }, className: "quest-header-button header-chip header-chip--icon", title: 'Apri Trip Atlas', 'aria-label': 'Apri Trip Atlas, '+userPicks.length+' tappe nel Quest Log' },
+                        React.createElement("button", { onClick: () => {setPlannerWorkspace('map');setAtlasDayIdx(plannerSelectedDay);setActiveTab('planner');setMobileMenuOpen(false);}, className: "quest-header-button header-chip header-chip--icon", title: 'Apri Trip Atlas', 'aria-label': 'Apri Trip Atlas, '+userPicks.length+' tappe nel Quest Log' },
                             React.createElement('span',{className:'header-chip-glyph','aria-hidden':true},'🧭'),
                             React.createElement('span',{className:'header-count','aria-hidden':true},userPicks.length)))),
-                React.createElement("nav", { className: "hidden md:flex items-center gap-1 overflow-x-auto py-0.5" }, navTabs.map(t => (React.createElement("button", { key: t.id, onClick: () => setActiveTab(t.id), className: `px-2.5 py-1 rounded-lg text-[11px] transition whitespace-nowrap ${activeTab === t.id ? activeNavPill : inactiveNavPill} ` }, t.label)))),
+                React.createElement("nav", { className: "hidden md:flex items-center gap-1 overflow-x-auto py-0.5" }, navTabs.map(t => (React.createElement("button", { key: t.id, onClick: () => {if(t.id==='route'){setPlannerWorkspace('map');setAtlasDayIdx(plannerSelectedDay);setActiveTab('planner');}else{if(t.id==='planner')setPlannerWorkspace('day');setActiveTab(t.id);}}, className: `px-2.5 py-1 rounded-lg text-[11px] transition whitespace-nowrap ${activeTab === t.id ? activeNavPill : inactiveNavPill} ` }, t.label)))),
                 React.createElement("nav", { className: "mobile-navigation md:hidden", "aria-label": "Navigazione pagine Japan 2026" },
                     React.createElement("div", { className: "mobile-quick-nav" },
                         ['hotels','planner','magical'].map(id => {
                             const tab = navTabs.find(t => t.id === id);
                             return React.createElement("button", { key: id, type: "button", "aria-current": activeTab === id ? 'page' : undefined,
                                 className: 'mobile-quick-button ' + (activeTab === id ? 'is-active' : ''),
-                                onClick: () => { setActiveTab(id); setMobileMenuOpen(false); window.scrollTo?.({top:0,behavior:'smooth'}); } },
+                                onClick: () => { setActiveTab(id);if(id==='planner')setPlannerWorkspace('day');setMobileMenuOpen(false);window.scrollTo?.({top:0,behavior:'smooth'}); } },
                                 id === 'hotels' ? '🎮 START' : id === 'planner' ? '🗓️ Planner' : '✨ Interessi');
                         }),
                         React.createElement("button", { type: "button", className: 'mobile-quick-button mobile-menu-trigger ' + (mobileMenuOpen || !['hotels','planner','magical','today'].includes(activeTab) ? 'is-active' : ''),
@@ -5899,11 +6101,11 @@ function App() {
                     mobileMenuOpen && React.createElement("div", { className: "mobile-pages-panel", id: "japan-mobile-pages" },
                         React.createElement("div", { className: "mobile-pages-heading" },
                             React.createElement("strong", null, 'Scegli una pagina'),
-                            React.createElement("span", null, '9 sezioni · Japan 2026')),
+                            React.createElement("span", null, '10 sezioni · Japan 2026')),
                         React.createElement("div", { className: "mobile-pages-grid" }, navTabs.map(t => React.createElement("button", {
                             type: "button", key: t.id, className: 'mobile-page-option ' + (activeTab === t.id ? 'is-active' : ''),
                             "aria-current": activeTab === t.id ? 'page' : undefined,
-                            onClick: () => { setActiveTab(t.id); setMobileMenuOpen(false); window.scrollTo?.({top:0,behavior:'smooth'}); }
+                            onClick: () => { if(t.id==='route'){setPlannerWorkspace('map');setAtlasDayIdx(plannerSelectedDay);setActiveTab('planner');}else{setActiveTab(t.id);if(t.id==='planner')setPlannerWorkspace('day');}setMobileMenuOpen(false);window.scrollTo?.({top:0,behavior:'smooth'}); }
                         }, t.label))))))),
         toastMsg && (React.createElement("div", { className: "fixed top-16 right-3 z-50 ww-card bg-[#005f9e] text-white px-3.5 py-2 text-xs font-bold shadow-lg flex items-center gap-2" },
             React.createElement("span", null, "\u2728"),
@@ -5915,7 +6117,7 @@ function App() {
             activeTab === 'today' && renderTodayTab(),
             activeTab === 'activity' && React.createElement(Japan24ActivityPage, {status:cloudInfo}),
             activeTab === 'hotels' && renderHotelsTab(),
-            activeTab === 'planner' && renderPlannerTab(),
+            activeTab === 'planner' && renderPlannerWorkspace(),
             activeTab === 'magical' && (React.createElement("div", { className: "space-y-5" },
                 React.createElement("section", { className: "ww-card bg-white p-4 md:p-5" },
                     React.createElement("h2", { className: "text-xl md:text-2xl font-bold text-[#004e82] mt-1" }, "Interessi e luoghi da scoprire"),
@@ -6156,7 +6358,7 @@ function App() {
                     React.createElement("div", { className: "flex flex-col md:flex-row md:items-center justify-between gap-2 mb-3" },
                         React.createElement("div", null,
                             React.createElement("h2", { className: "text-lg md:text-xl font-bold text-slate-900 tracking-tight" }, "\uD83C\uDF41 Must-do in Autumn"),
-                            React.createElement("p", { className: "text-xs text-slate-600 mt-0.5" }, "Le tappe autunnali da non perdere durante il viaggio: momiji, viali di ginkgo e, come bonus serale, le illuminazioni invernali di dicembre.")),
+                            React.createElement("p", { className: "text-xs text-slate-600 mt-0.5" }, "A fine novembre e inizio dicembre cercate il foliage rimasto in città e i giardini riparati. A Kyoto metà dicembre è spesso tardi per il picco: privilegiate passeggiate e luci invernali. Verificate gli aggiornamenti sul calendario ufficiale Kyoto Travel.")),
                         React.createElement("div", { className: "flex items-center gap-1.5 shrink-0" },
                             React.createElement("span", { className: "text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300" }, "Ultima previsione JMC \u00B7 4 nov 2026"))),
                     React.createElement("div", { className: "bg-[#fff3e6] border border-[#f5d0a9] rounded-xl p-3 flex items-start gap-2.5 mb-4" },
@@ -6227,7 +6429,7 @@ function App() {
                                 React.createElement("button", { onClick: () => togglePick(spot), className: `ww-btn flex-1 py-1.5 rounded-lg text-[11px] font-bold ${isPicked ? 'bg-emerald-600 text-white' : 'bg-[#facc15] text-slate-900'}` }, isPicked ? '✓ Nel Log' : '+ Quest Log'),
                                 starButton(spot,{category:'Eventi di dicembre',city:spot.city},'favorite-star favorite-star-small'))));
                     }))))),
-            activeTab === 'route' && renderTripAtlasTab(),
+            activeTab === 'route' && renderPlannerWorkspace(),
             activeTab === 'travelkit' && (React.createElement("div", { className: "space-y-4" },
                 React.createElement("section", { className: `ww-card p-5 md:p-6 text-white ${theme === 'windwaker' ? 'bg-gradient-to-r from-[#004e82] via-[#0069ad] to-[#0088cc]' : 'bg-gradient-to-r from-[#991b1b] via-[#dc2626] to-[#ef4444]'}` },
                     React.createElement("div", { className: "flex flex-col lg:flex-row lg:items-end justify-between gap-4" },
@@ -6338,35 +6540,44 @@ function App() {
                             n > 7 && React.createElement("button", { className: "phrase-expand-button", onClick: () => setPhraseShowAll(!phraseShowAll) }, phraseShowAll ? '↑ Mostra meno' : `↓ Scopri altre ${n - 7} frasi`)); })()),
                     ),
                 React.createElement("section", { className: "travel-panel p-4" },
-                    React.createElement("div", { className: "travel-kicker" }, "Promemoria personale"),
-                    React.createElement("h3", { className: "travel-heading mt-1 mb-2" }, "\u270D\uFE0F Note di viaggio condivise"),
-                    React.createElement("textarea", { value: travelNotes, onChange: e => setTravelNotes(e.target.value), rows: "5", placeholder: "Indirizzi, cose da comprare, ristoranti da provare, dettagli da ricordare\u2026", className: "w-full border p-3 text-sm resize-y" }),
-                    React.createElement("div", { className: "flex flex-wrap justify-between items-center gap-2 mt-2" },
-                        React.createElement("span", { className: "text-[10px] text-slate-400" }, "Salvataggio automatico sul dispositivo \u00B7 non viene inviato a un server"),
-                        React.createElement("button", { onClick: () => window.print(), className: "travel-action secondary travel-no-print" }, "\u2399 Stampa riepilogo"))))),
+                    React.createElement("div", { className: "travel-kicker" }, "PRIVATO · SOLO QUESTO DISPOSITIVO"),
+                    React.createElement("h3", { className: "travel-heading mt-1 mb-2" }, "✍️ Promemoria personale"),
+                    React.createElement("textarea", { value: travelNotes, onChange: e => setTravelNotes(e.target.value), rows: "4", placeholder: "Cose che vuoi ricordare soltanto tu…", className: "w-full border p-3 text-sm resize-y", 'aria-label':'Promemoria personale, non sincronizzato' }),
+                    React.createElement("small", {className:"j29-note-hint"}, "Salvato su questo dispositivo; non viene inviato a Firebase.")),
+                React.createElement('section',{className:'travel-panel p-4 j29-shared-notes'},
+                    React.createElement('div',{className:'travel-kicker'},'☁️ NOTE DEL VIAGGIO · CONDIVISE'),
+                    React.createElement('h3',{className:'travel-heading mt-1 mb-2'},'📝 Note di viaggio condivise'),
+                    React.createElement('p',{className:'j29-note-hint'},'Visibili a Silvia e Ugo quando entrambi sono collegati allo stesso viaggio. Le nuove note vengono sincronizzate tramite ☁️.'),
+                    React.createElement('form',{className:'j29-shared-form',onSubmit:e=>{e.preventDefault();const content=sharedNoteDraft.trim();if(!content)return;setSharedTravelNotes(p=>[{id:'note-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),text:content,by:Japan22Cloud.getName()||'Silvia/Ugo',at:new Date().toISOString()},...p]);setSharedNoteDraft('');showToast('Nota salvata per il viaggio condiviso');}},
+                        React.createElement('textarea',{value:sharedNoteDraft,onChange:e=>setSharedNoteDraft(e.target.value),rows:3,maxLength:1200,placeholder:'Un posto da ricordare, un indirizzo, qualcosa da fare insieme…','aria-label':'Nuova nota condivisa'}),
+                        React.createElement('button',{type:'submit',disabled:!sharedNoteDraft.trim()},'＋ Aggiungi nota condivisa')),
+                    React.createElement('div',{className:'j29-shared-list'},Array.isArray(sharedTravelNotes)&&sharedTravelNotes.length?sharedTravelNotes.map(n=>React.createElement('article',{className:'j29-shared-entry',key:n.id},
+                      React.createElement('p',null,n.text),
+                      React.createElement('small',null,(n.by||'Viaggio')+' · '+(n.at?new Date(n.at).toLocaleString('it-IT',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'')),
+                      React.createElement('button',{type:'button',onClick:()=>{if(window.confirm('Eliminare questa nota condivisa per entrambi?'))setSharedTravelNotes(p=>p.filter(x=>x.id!==n.id));},'aria-label':'Elimina nota condivisa'},'×'))):React.createElement('p',{className:'j29-note-hint'},'Nessuna nota condivisa. Scrivete la prima!'))))),
             activeTab === 'archive' && React.createElement("div", { className: "space-y-4" },
                 React.createElement("section", { className: "ww-card archive-world p-3 md:p-6" },
                     React.createElement("div", { className: "archive-cover" },
                         React.createElement("div", null,
                             React.createElement("span", { className: "archive-eyebrow" }, "PERSONAL REFERENCE LIBRARY"),
-                            React.createElement("h3", null, "Ugo\u2019s Discovery Archive"),
+                            React.createElement("h3", null, "Discovery Archive"),
                             React.createElement("p", null, "Un unico taccuino per tè, moda, cibo, negozi, gadget, luoghi e idee da ricordare.")),
                         React.createElement("div", { className: "archive-volume" },
                             "VOL. 01",
                             React.createElement("span", null, "\u65E5\u672C \u00B7 2026"))),
                     React.createElement('div',{className:'archive-mini-toolbar'},
-                        React.createElement('select',{value:journalKind,'aria-label':'Tipo di scoperta',onChange:e=>{const id=e.target.value;setJournalKind(id);setJournalEditing(null);setJournalForm({kind:id,score:4,umami:3,roast:3});}},
+                        React.createElement('select',{value:journalKind,'aria-label':'Tipo di scoperta',onChange:e=>{const id=e.target.value;setJournalKind(id);setJournalEditing(null);setJournalForm({kind:id,date:japanLocalISO(),score:4,umami:3,roast:3});}},
                             ARCHIVE_TYPES.map(([id,label])=>React.createElement('option',{key:id,value:id},label))),
-                        React.createElement('button',{type:'button',onClick:()=>{setJournalEditing(null);setJournalForm({kind:journalKind,score:4,umami:3,roast:3});setArchiveEditorOpen(p=>!p);}},archiveEditorOpen?'− Chiudi scheda':'＋ Aggiungi una scoperta'),
+                        React.createElement('button',{type:'button',onClick:()=>{setJournalEditing(null);setJournalForm({kind:journalKind,date:japanLocalISO(),score:4,umami:3,roast:3});setArchiveEditorOpen(p=>!p);}},archiveEditorOpen?'− Chiudi scheda':'＋ Aggiungi una scoperta'),
                         React.createElement('span',{className:'text-[11px] font-bold text-slate-500'},previewNotes.length+' schede salvate')),
                     archiveEditorOpen &&                     React.createElement("div", { className: "archive-main" },
                         React.createElement("div", { className: "archive-editor" },
                             React.createElement("div", { className: "archive-header" },
                                 React.createElement("span", { className: "archive-overline" }, journalEditing ? 'MODIFICA SCHEDA' : 'NUOVA SCHEDA · ' + (ARCHIVE_LABELS[journalKind])),
-                                React.createElement("h4", null, journalKind === 'tea' ? 'Degustazione' : journalKind === 'denim' ? 'Scheda del denim' : journalKind === 'science' ? 'Osservazione scientifica' : journalKind === 'gaming' ? 'Videogiochi e collezionismo' : journalKind === 'food' ? 'Cibo e ristoranti' : journalKind === 'places' ? 'Luogo da visitare' : journalKind === 'gadgets' ? 'Gadget e accessori' : 'Negozio da ricordare'),
-                                React.createElement("p", null, journalKind === 'tea' ? 'Varietà, infusione e aromi.' : journalKind === 'denim' ? 'Modello, tessuto e vestibilità.' : journalKind === 'science' ? 'Idee e approfondimenti.' : journalKind === 'gaming' ? 'Collezioni, giochi e soundtrack.' : journalKind === 'food' ? 'Piatti, sapori e prezzi.' : journalKind === 'places' ? 'Atmosfera, percorso e dettagli.' : journalKind === 'gadgets' ? 'Versioni, prezzi e specifiche.' : 'Indirizzi, reparti e acquisti da ricordare.')),
+                                React.createElement("h4", null, journalKind === 'tea' ? 'Degustazione' : journalKind === 'denim' ? 'Scheda del denim' : journalKind === 'science' ? 'Osservazione scientifica' : journalKind === 'gaming' ? 'Videogiochi e collezionismo' : journalKind === 'food' ? 'Cibo e ristoranti' : journalKind === 'places' ? 'Luogo da visitare' : journalKind === 'gadgets' ? 'Gadget e accessori' : journalKind === 'other' ? 'Altra scoperta' : 'Negozio da ricordare'),
+                                React.createElement("p", null, journalKind === 'tea' ? 'Varietà, infusione e aromi.' : journalKind === 'denim' ? 'Modello, tessuto e vestibilità.' : journalKind === 'science' ? 'Idee e approfondimenti.' : journalKind === 'gaming' ? 'Collezioni, giochi e soundtrack.' : journalKind === 'food' ? 'Piatti, sapori e prezzi.' : journalKind === 'places' ? 'Atmosfera, percorso e dettagli.' : journalKind === 'gadgets' ? 'Versioni, prezzi e specifiche.' : journalKind === 'other' ? 'Un ricordo, un’idea o una scoperta fuori categoria.' : 'Indirizzi, reparti e acquisti da ricordare.')),
                             React.createElement("form", { onSubmit: e => { e.preventDefault(); if (!(journalForm.name || '').trim())
-                                    return; const entry = { ...journalForm, kind: journalKind, id: journalEditing || 'archive-' + Date.now(), name: journalForm.name.trim(), place: (journalForm.place || '').trim(), score: Number(journalForm.score) || 4 }; setPreviewNotes(prev => journalEditing ? prev.map(x => x.id === journalEditing ? entry : x) : [entry, ...prev]); setJournalEditing(null); setJournalForm({ kind: journalKind, score: 4, umami: 3, roast: 3 }); setArchiveEditorOpen(false); showToast('Scheda salvata nell’archivio.'); } },
+                                    return; const entry = { ...journalForm, kind: journalKind, id: journalEditing || 'archive-' + Date.now(), name: journalForm.name.trim(), place: (journalForm.place || '').trim(), score: Number(journalForm.score) || 4 }; setPreviewNotes(prev => journalEditing ? prev.map(x => x.id === journalEditing ? entry : x) : [entry, ...prev]); setJournalEditing(null); setJournalForm({ kind: journalKind, date: japanLocalISO(), score: 4, umami: 3, roast: 3 }); setArchiveEditorOpen(false); showToast('Scheda salvata nell’archivio.'); } },
                                 React.createElement("div", { className: "archive-form-row" },
                                     React.createElement("label", null,
                                         "Nome / scoperta",
@@ -6374,6 +6585,7 @@ function App() {
                                     React.createElement("label", null,
                                         "Luogo",
                                         React.createElement("input", { value: journalForm.place || '', onChange: e => setJournalForm(p => ({ ...p, place: e.target.value })), placeholder: "Negozio, museo o citt\u00E0" }))),
+                                React.createElement('label',{className:'j29-archive-date'},'📅 Data della scoperta (facoltativa)',React.createElement('input',{type:'date',value:journalForm.date||'',min:'2025-01-01',max:'2035-12-31',onChange:e=>setJournalForm(p=>({...p,date:e.target.value}))})),
                                 journalKind === 'tea' && React.createElement(React.Fragment, null,
                                     React.createElement("div", { className: "archive-form-row" },
                                         React.createElement("label", null,
@@ -6443,7 +6655,7 @@ function App() {
                                             n,
                                             "/5")))),
                                     React.createElement("label", null,
-                                        "Foto della scoperta ",
+                                        "Foto della scoperta · condivisa ",
                                         React.createElement("span", null, "(facoltativa)"),
                                         React.createElement("input", { type: "file", accept: "image/*", onChange: e => loadJournalPhoto(e.target.files && e.target.files[0]) }))),
                                 journalForm.photo && React.createElement("div", { className: "archive-photo-preview" },
@@ -6451,7 +6663,7 @@ function App() {
                                     React.createElement("button", { type: "button", onClick: () => setJournalForm(p => ({ ...p, photo: undefined })) }, "\u00D7 Rimuovi foto")),
                                 React.createElement("div", { className: "archive-submit" },
                                     React.createElement("button", { className: "travel-action", type: "submit" }, journalEditing ? '✓ Aggiorna scheda' : '＋ Salva nell’archivio'),
-                                    journalEditing && React.createElement("button", { type: "button", className: "travel-action secondary", onClick: () => { setJournalEditing(null); setJournalForm({ kind: journalKind, score: 4, umami: 3, roast: 3 }); } }, "Annulla")))),
+                                    journalEditing && React.createElement("button", { type: "button", className: "travel-action secondary", onClick: () => { setJournalEditing(null); setJournalForm({ kind: journalKind, date: japanLocalISO(), score: 4, umami: 3, roast: 3 }); } }, "Annulla")))),
                         React.createElement("div", { className: "archive-side" },
                             React.createElement("div", { className: "archive-side-head" },
                                 React.createElement("span", null,
@@ -6518,6 +6730,7 @@ function App() {
                                 React.createElement("p", { className: "archive-entry-place" },
                                     "\uD83D\uDCCD ",
                                     n.place || 'Luogo da aggiungere',
+                                    n.date?' · '+new Date(n.date+'T12:00:00').toLocaleDateString('it-IT'):'',
                                     " \u00B7 ",
                                     '★'.repeat(n.score || 0)),
                                 React.createElement("p", { className: "archive-entry-note" }, n.note || 'Nessuna descrizione aggiunta.'),
@@ -6525,9 +6738,9 @@ function App() {
                                 React.createElement("div", { className: "archive-entry-actions" },
                                     n.place && React.createElement("a", {href:'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(n.place+' Japan'),target:'_blank',rel:'noreferrer',className:'archive-map-link'},'↗ Maps'),
                                     n.url && /^https:\/\//i.test(n.url) && React.createElement("a",{href:n.url,target:'_blank',rel:'noreferrer',className:'archive-map-link'},'↗ Sito'),
-                                    React.createElement("button", { onClick: () => { setJournalKind(n.kind || 'tea'); setJournalEditing(n.id); setJournalForm({ ...n, kind: n.kind || 'tea' }); setArchiveEditorOpen(true); window.scrollTo && window.scrollTo({ top: document.querySelector('.archive-world')?.getBoundingClientRect().top + window.scrollY - 45, behavior: 'smooth' }); } }, "\u270E Modifica"),
-                                    React.createElement("button", { onClick: () => setPreviewNotes(prev => prev.filter(x => x.id !== n.id)) }, "\u00D7 Elimina"))))))),
-                    React.createElement("p", { className: "archive-disclaimer" }, "Le schede e gli appunti possono essere sincronizzati tramite il pulsante ☁️ Condividi in alto. Le fotografie restano sul telefono originale: non vengono inviate al cloud. Non disinstallare l’app prima di salvare la tua copia."))))));
+                                    React.createElement("button", { onClick: () => { setJournalKind(n.kind || 'tea'); setJournalEditing(n.id); setJournalForm({ ...n, date:n.date||'', kind: n.kind || 'tea' }); setArchiveEditorOpen(true); window.scrollTo && window.scrollTo({ top: document.querySelector('.archive-world')?.getBoundingClientRect().top + window.scrollY - 45, behavior: 'smooth' }); } }, "\u270E Modifica"),
+                                    React.createElement("button", { onClick: () => { if(window.confirm('Eliminare definitivamente '+(n.name||'questa scoperta')+' dall’archivio condiviso?'))setPreviewNotes(prev => prev.filter(x => x.id !== n.id)); } }, "\u00D7 Elimina"))))))),
+                    React.createElement("p", { className: "archive-disclaimer" }, "📷 Le fotografie delle scoperte vengono compresse, cifrate e condivise con l’altro dispositivo tramite Firebase. Per attivarle, aggiorna entrambi alla V30 e pubblica le nuove regole Firestore. Salva una copia locale prima di disinstallare l’app."))))));
 }
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
     window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => { }));
