@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#005f9e">
-    <meta name="app-build" content="2026-11-24-v75-curated">
+    <meta name="app-build" content="2026-11-24-v76-targeted">
     <meta name="description" content="Diario di viaggio interattivo per il Giappone: itinerario, hotel, mappe, tè a Uji, checklist e spese.">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -4111,12 +4111,12 @@ async function japan24GetPosition() {
   }
 }
 
-function TripAtlasCanvas({places, selectedId, onSelect, routeStops, city, visible, onToast, extraCoords={}, showAll=false, onAddPlace=null, onChooseDay=null, onOpenPlannedDay=null, onOpenDetails=null, focusStamp=0, onMapPoint=null}) {
+function TripAtlasCanvas({places, selectedId, onSelect, routeStops, city, visible, onToast, extraCoords={}, showAll=false, onAddPlace=null, onChooseDay=null, onOpenPlannedDay=null, onOpenDetails=null, focusStamp=0, onMapPoint=null, centerRequest=null}) {
  const R=React.createElement;
  const containerRef=React.useRef(null),mapRef=React.useRef(null),markerRef=React.useRef(new Map());
  const gpsMarkerRef=React.useRef(null),onSelectRef=React.useRef(onSelect),currentDataRef=React.useRef(null);
  const onAddRef=React.useRef(onAddPlace),onChooseDayRef=React.useRef(onChooseDay),onOpenDayRef=React.useRef(onOpenPlannedDay),onDetailsRef=React.useRef(onOpenDetails);
- const pointRef=React.useRef(onMapPoint);pointRef.current=onMapPoint;
+ const lastFocus=React.useRef(0); const pointRef=React.useRef(onMapPoint);pointRef.current=onMapPoint;
  onSelectRef.current=onSelect;onAddRef.current=onAddPlace;onChooseDayRef.current=onChooseDay;onOpenDayRef.current=onOpenPlannedDay;onDetailsRef.current=onOpenDetails;
  const [engineReady,setEngineReady]=React.useState(japan40MapReady());
  const [mapState,setMapState]=React.useState('loading');
@@ -4182,7 +4182,7 @@ function TripAtlasCanvas({places, selectedId, onSelect, routeStops, city, visibl
      markerRef.current.set(place.id,marker);
    });
    const focus=showAll?validPlaces.map(p=>p.coords):(routePoints.length?routePoints:validPlaces.map(p=>p.coords));
-   if(!japan40FitPoints(map,focus,showAll?13:14)){
+   if(!onMapPoint&&!japan40FitPoints(map,focus,showAll?13:14)){
      const center=TRIP_ATLAS_CENTERS[city]||TRIP_ATLAS_CENTERS.Tokyo;
      map.jumpTo({center:[center[1],center[0]],zoom:11});
    }
@@ -4196,20 +4196,20 @@ function TripAtlasCanvas({places, selectedId, onSelect, routeStops, city, visibl
    }
    const chosen=markerRef.current.get(selectedId);
    if(chosen){const map=mapRef.current;const coords=chosen.getLngLat?.();
-     if(map&&coords&&!map.getBounds?.().contains?.(coords))map.panTo([coords.lng,coords.lat],{duration:200});
+     if(!onMapPoint&&map&&coords&&!map.getBounds?.().contains?.(coords))map.panTo([coords.lng,coords.lat],{duration:200});
      // Do not force a popup on first render: the user can tap a pin.
    }
  },[selectedId,engineReady,pinsKey]);
  React.useEffect(()=>{
-   if(!focusStamp||!visible||mapState!=='ready')return;
+   if(!focusStamp||focusStamp===lastFocus.current||!visible||mapState!=='ready')return;
    const map=mapRef.current,selected=validPlaces.find(p=>p.id===selectedId);
    if(!map||!selected)return;
-   map.resize?.();map.flyTo({center:[Number(selected.coords[1]),Number(selected.coords[0])],zoom:Math.max(15,map.getZoom?.()||0),essential:true,duration:350});
+   lastFocus.current=focusStamp;map.resize?.();map.flyTo({center:[Number(selected.coords[1]),Number(selected.coords[0])],zoom:Math.max(15,map.getZoom?.()||0),essential:true,duration:350});
    markerRef.current.get(selected.id)?.togglePopup?.();
  },[focusStamp,selectedId,mapState,visible]);
  React.useEffect(()=>{
    const map=mapRef.current;if(!map||!visible)return;
-   const reflow=()=>{map.resize?.();const d=currentDataRef.current;if(d){
+   const reflow=()=>{map.resize?.();const d=currentDataRef.current;if(d&&!onMapPoint){
      const f=d.showAll?d.validPlaces.map(p=>p.coords):(d.routePoints.length?d.routePoints:d.validPlaces.map(p=>p.coords));
      japan40FitPoints(map,f,d.showAll?13:14);
    }};
@@ -4223,6 +4223,7 @@ function TripAtlasCanvas({places, selectedId, onSelect, routeStops, city, visibl
    const el=document.createElement('span');el.className='j40-gps-pin';el.setAttribute('aria-label','La tua posizione GPS');
    gpsMarkerRef.current=new GL.Marker({element:el,anchor:'center'}).setLngLat([gps[1],gps[0]]).addTo(map);
  },[gps,engineReady]);
+ React.useEffect(()=>{if(centerRequest&&mapState==='ready'&&mapRef.current)mapRef.current.jumpTo({center:[centerRequest.lon,centerRequest.lat],zoom:14});},[centerRequest,mapState]);
  const focusRoute=()=>{
    const map=mapRef.current;if(!map)return;
    const pts=routePoints.length?routePoints:validPlaces.map(p=>p.coords);
@@ -5230,18 +5231,29 @@ function rhTitleFromQuery(query) {
     'kotobukiya akihabara tokyo':'Kotobukiya · Akihabara' };
   return common[query] || query.replace(/\b\w/g,c=>c.toUpperCase());
 }
+function rhInfrastructure(value) {
+ const t=String(value||'');
+ if(/railway museum|railroad museum|stationery|school museum|school of rock/i.test(t))return false;
+ return /\b(station|terminal|interchange|expressway|school|university|college|kindergarten|hospital|clinic|office|headquarters|apartment|residence|hotel|police|fire station|post office|railway line)\b|駅$|学校|幼稚園|病院|大学|役所/i.test(t);
+}
 function rhOsmCategory(tags) {
   const t=tags||{};const has=(key,regex)=>regex.test(String(t[key]||''));
+  const name=[t.name,t['name:en'],t.brand].filter(Boolean).join(' ');
+  if(has('amenity',/^(school|university|college|kindergarten|hospital|clinic|police|fire_station)$/)||has('railway',/^(station|halt|tram_stop)$/)||has('public_transport',/^(station|platform)$/)||rhInfrastructure(name))return null;
+  if(/nintendo|pok[eé]mon|ポケモン|任天堂|square enix|スクウェア|surugaya|駿河屋|super potato|スーパーポテト|mandarake|まんだらけ|animate|アニメイト|retro game/i.test(name))return 'games';
+  if(/denim|jeans|デニム|ジーンズ|古着|hinoya|momotaro/i.test(name))return 'fashion';
+  if(/science museum|科学館|天文台|プラネタリウム|planetarium|observatory/i.test(name))return 'science';
+  if(/record shop|disk union|ディスクユニオン|レコード/i.test(name))return 'music';
   if(has('shop',/^(tea)$/)||/(matcha|gyokuro|sencha|hojicha|tea house|teahouse|抹茶|紅茶|茶屋)/i.test(t.name||''))return 'tea';
   if(has('shop',/^(video_games|games|toys|anime|comics)$/)||has('leisure',/^(amusement_arcade)$/)||has('tourism',/^(theme_park)$/))return 'games';
-  if(has('shop',/^(books|bookshop)$/)||has('amenity',/^(library)$/))return 'books';
+  if(has('shop',/^(books|bookshop)$/))return 'books';
   if(has('shop',/^(music|musical_instrument)$/)||has('amenity',/^(music_venue)$/))return 'music';
-  if(has('shop',/^(clothes|boutique|fabric|department_store)$/))return 'fashion';
+  if(has('shop',/^(clothes|boutique)$/)&&(has('clothes',/jeans|denim|vintage/i)||has('second_hand',/yes|only/)))return 'fashion';
   if(has('amenity',/^(planetarium)$/)||/science|astronom|planetari/i.test(t.name||''))return 'science';
   if(has('leisure',/^(park|garden)$/))return 'nature';
   if(has('tourism',/^(viewpoint)$/))return 'love';
   if(has('amenity',/^(restaurant|cafe|fast_food)$/))return 'food';
-  if(has('tourism',/^(attraction|museum|gallery)$/)||has('historic',/^(temple|shrine|castle|monument)$/))return 'sight';
+  if(has('tourism',/^(attraction|museum|gallery|aquarium|zoo)$/)||has('historic',/^(temple|shrine|castle|monument)$/)||has('building',/^(temple|shrine)$/))return 'sight';
   return null;
 }
 // V54: compare discovered OSM objects with named items in the curated catalog.
@@ -5265,7 +5277,7 @@ function rhSamePlace(a,b) {
 // Limit requests to a small radius and cap the returned records for public-server fairness.
 function rhOverpassQuery(lat,lon,meters,categories) {
   // Explicit enrichment only: narrow the search to a 900-metre circle.
-  const r=Math.max(250,Math.min(3000,Math.round(meters)));
+  const r=Math.max(250,Math.min(5000,Math.round(meters)));
   const around=`(around:${r},${Number(lat).toFixed(3)},${Number(lon).toFixed(3)})`;
   const filters={
     sight:['["tourism"~"^(attraction|museum|gallery|viewpoint)$"]','["historic"~"^(temple|shrine|castle|monument)$"]'],
@@ -5279,8 +5291,9 @@ function rhOverpassQuery(lat,lon,meters,categories) {
     fashion:['["shop"~"^(clothes|boutique|department_store)$"]'],
     nature:['["leisure"~"^(park|garden)$"]']
   };
-  const clauses=[...new Set(categories.flatMap(c=>filters[c]||[]))].map(f=>`nwr${f}["name"]${around};`);
-  return '[out:json][timeout:10];('+clauses.join('')+');out center 300;';
+  const targeted={games:['["name"~"Nintendo|Pokémon|Pokemon|ポケモン|任天堂|Square Enix|駿河屋|まんだらけ|アニメイト|スーパーポテト",i]'],tea:['["name"~"抹茶|茶舗|茶屋|gyokuro|hojicha|matcha|tea house",i]'],fashion:['["name"~"denim|jeans|デニム|ジーンズ|古着",i]','["shop"="clothes"]["second_hand"~"yes|only"]'],science:['["name"~"科学館|天文台|プラネタリウム|science museum|observatory|planetarium",i]'],music:['["name"~"レコード|ディスクユニオン|record shop|disk union",i]'],sight:['["building"~"^(temple|shrine)$"]']};
+  const clauses=[...new Set(categories.flatMap(c=>[...(targeted[c]||[]),...(filters[c]||[])]))].map(f=>`nwr${f}["name"]${around};`);
+  return '[out:json][timeout:20];('+clauses.join('')+');out center 500;';
 }
 
 function rhWithinJapan(lat,lon) { return Number(lat)>=24&&Number(lat)<=46&&Number(lon)>=122&&Number(lon)<=154; }
@@ -5311,6 +5324,7 @@ function rhOsmUsefulDescription(tags,category) {
 }
 function rhWikiVisitorCategory(title, description='') {
   const name=String(title||''); const intro=String(description||'');
+  if(rhInfrastructure(name))return null;
   if(/\b(station|terminal|interchange|expressway|motorway|railway line|office|headquarters|apartment|residential|school|university|hospital|municipal|ward office|district court|power plant|company|corporation|hotel)\b/i.test(name))return null;
   if(/\b(?:is|was) (?:an? |the )?(?:railway station|train station|subway station|office building|residential building|railway line|company|school|hospital|administrative district)\b/i.test(intro))return null;
   const t=name+' '+intro;
@@ -5596,6 +5610,7 @@ function App() {
     const [rhLimit,setRhLimit]=React.useState(60);
     const [rhShowMap,setRhShowMap]=React.useState(true);
     const [rhMapFocusStamp,setRhMapFocusStamp]=React.useState(0);
+    const [rhCenterRequest,setRhCenterRequest]=React.useState(null);
     const rhMapPanelRef=React.useRef(null);
     const [rhLastUpdated,setRhLastUpdated]=React.useState(null);
     React.useEffect(()=>writeJapanStore('japan2026:rhCategoriesV34',rhCategories),[rhCategories]);
@@ -8657,7 +8672,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
       setRhStatus('📡 Ricerca posizione GPS in corso…');
       try{
         const pos=await japan24GetPosition();
-        setRhPosition(pos);setRhExternal([]);setRhDiscoveryState('idle');setRhChosen('');setRhLastUpdated(new Date());
+        setRhCenterRequest(pos);setRhPosition(pos);setRhExternal([]);setRhDiscoveryState('idle');setRhChosen('');setRhLastUpdated(new Date());
         const city=rhNearestCity(pos.lat,pos.lon);
         setRhStatus(`📍 Posizione disponibile · ${city} · precisione dichiarata ${pos.accuracy===null?'non nota':'~'+pos.accuracy+' m'}. Distanze in linea d’aria.`);
       }catch(error){setRhStatus('⚠️ '+(error.message||'Posizione non disponibile')+' Puoi comunque utilizzare Planner e Interessi.');}
@@ -8705,10 +8720,15 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
           // The public Overpass service is optional and only used after a click.
           // Do not route around a 429/406 limit by switching to another Overpass host.
           try {
-            const query=rhOverpassQuery(center.lat,center.lon,distanceKm*1000,rhCategories);
-            const body=new URLSearchParams({data:query});
-            collected=rhOsmPlaces(await request('https://overpass.private.coffee/api/interpreter',
-              {method:'POST',body,headers:{'Content-Type':'application/x-www-form-urlencoded'}},14000));
+            const groups=[rhCategories.filter(c=>['games','tea','fashion','science','books','music'].includes(c)),rhCategories.filter(c=>!['games','tea','fashion','science','books','music','food'].includes(c)),rhCategories.filter(c=>c==='food')].filter(g=>g.length);
+            for(const group of groups){
+              if(!current())return;
+              try{const query=rhOverpassQuery(center.lat,center.lon,Math.min(distanceKm,group[0]==='food'?1:5)*1000,group);
+                const body=new URLSearchParams({data:query});
+                const found=rhOsmPlaces(await request('https://overpass.private.coffee/api/interpreter',{method:'POST',body,headers:{'Content-Type':'application/x-www-form-urlencoded'}},24000));
+                collected.push(...found.filter(p=>group.includes(p.category)));
+              }catch(e){notes.push(rhDiscoveryErrorMessage(e));if(/429|406/.test(String(e.message)))break;}
+            }
             notes.push('OpenStreetMap: '+collected.length+' luoghi');
           }catch(e){notes.push('OpenStreetMap non disponibile: '+rhDiscoveryErrorMessage(e));}
         }
@@ -8749,15 +8769,15 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
     // Never refetch on each render, category click or scroll; allow manual refresh instead.
     React.useEffect(()=>{
       const center=rhLocationMode==='manual'?rhManualLocation:rhPosition;
-      if(activeTab!=='rightnow'||!center||!rhCategories.length)return;
       rhGeneration.current++;setRhBusy(false);setRhExternal([]);
+      if(activeTab!=='rightnow'||!center||!rhCategories.length)return;
       const handle=setTimeout(()=>rhLoadOsm({automatic:true}),1200);
       return ()=>clearTimeout(handle);
     },[activeTab,rhLocationMode,rhPosition,rhManualLocation,rhRadius,rhCategories]);
     // V35: choose a reference location for research without moving or impersonating GPS.
-    const rhChooseLocation=(place)=>{
+    const rhChooseLocation=(place,fromPin=false)=>{
       if(!place||!Number.isFinite(place.lat)||!Number.isFinite(place.lon))return;
-      rhGeneration.current++;setRhManualLocation(place);setRhLocationMode('manual');setRhPlaceOptions([]);
+      if(!fromPin)setRhCenterRequest(place);rhGeneration.current++;setRhManualLocation(place);setRhLocationMode('manual');setRhPlaceOptions([]);
       setRhExternal([]);setRhDiscoveryState('idle');setRhChosen('');setRhLimit(60);
       setRhStatus('🎯 Esplorazione da '+place.label+'. Le distanze sono calcolate da questo punto, non dalla tua posizione GPS.');
     };
@@ -8791,7 +8811,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
     };
     const rhUseGps=()=>{
       setRhLocationMode('gps');setRhPlaceOptions([]);setRhExternal([]);setRhDiscoveryState('idle');setRhChosen('');
-      if(rhPosition)setRhStatus('📍 GPS riattivato: '+rhNearestCity(rhPosition.lat,rhPosition.lon));
+      if(rhPosition){setRhCenterRequest({...rhPosition});setRhStatus('📍 GPS riattivato: '+rhNearestCity(rhPosition.lat,rhPosition.lon));}
       else rhReadPosition();
     };
     const rhShowOnMap=p=>{
@@ -8816,7 +8836,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
         const prev=pool.get(key);
         if(!prev||(!entry.osm&&prev.osm)||((prev.osm===entry.osm)&&String(entry.info).length>String(prev.info).length))pool.set(key,entry);
       };
-      Object.entries(TRIP_ATLAS_COORDS).forEach(([query,coords])=>insert({query,coords,title:rhTitleFromQuery(query),category:rhCategoryFromText(query),info:'Luogo già presente nella mappa di viaggio'}));
+      // Coordinate index is not a recommendation catalogue; use curated entries and actual planner stops below.
       areaExplorerSpots.forEach(p=>insert({...p,query:p.mapQuery,coords:EXPLORER_COORDS[p.id]||atlasCoordinates(p.mapQuery),category:rhCategoryFromText(p.title+' '+p.tags.join(' ')),info:p.desc}));
       magicalInterests.forEach(p=>insert({...p,query:p.mapQuery,category:rhCategoryFromText(p.title+' '+p.tags.join(' ')),info:p.desc}));
       romanticExperiences.forEach(p=>insert({...p,query:p.mapQuery,category:'love',info:p.desc}));
@@ -8842,7 +8862,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
           distance:rhDistanceKm(now.lat,now.lon,p.coords[0],p.coords[1]),
           plannedDays:daysInPlanner(p)}))
         .filter(p=>p.distance<=rhRadius+0.0001 && rhCategories.includes(p.category) &&
-          (p.plannedDays.length||p.category!=='sight'||! /\b(station|terminal|airport|hotel|office|headquarters)\b/i.test(p.title)) &&
+          (p.plannedDays.length||!rhInfrastructure(p.title+' '+p.query)) &&
           (!normalized||(p.title+' '+p.info+' '+p.city).toLocaleLowerCase().includes(normalized)))
         // Discoveries first; planned stops remain in the same list, visibly labelled.
         // Within each group, distance remains the sorting criterion.
@@ -8852,7 +8872,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
       // silently merging different branches of a brand elsewhere in Japan.
       const visible=[];
       for(const p of nowFiltered){if(!visible.some(q=>rhSamePlace(p,q)))visible.push(p);}
-      const limited=visible.slice(0,rhLimit);
+      const limited=[]; const queues=rhCategories.map(c=>visible.filter(p=>p.category===c)); while(limited.length<rhLimit&&queues.some(q=>q.length)){for(const q of queues){if(q.length&&limited.length<rhLimit)limited.push(q.shift());}}
       const selected=visible.find(p=>p.id===rhChosen)||visible[0]||null;
       const jpDate=japanLocalISO();
       const actualDay=TRIP_CALENDAR_2026.indexOf(jpDate);
@@ -8919,7 +8939,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
             R('label',null,'Giornata di riferimento ',R('select',{value:targetDay,onChange:e=>{setRhDayOverride(Number(e.target.value));setAtlasDayIdx(Number(e.target.value));setPlannerSelectedDay(Number(e.target.value));}},dailyItinerary.map((d,i)=>R('option',{key:i,value:i},(i+1)+' · '+d.date+' · '+d.city))))),
           R('div',{className:'rh-osm-row'},
             R('button',{type:'button',className:'rh-secondary',disabled:!now||rhBusy||!rhCategories.length,onClick:()=>rhLoadOsm()},rhBusy?'⌛ Ricerca in corso…':'↻ Aggiorna scoperte'),
-            R('span',null,'Ricerca automatica: catalogo nel raggio scelto, OpenStreetMap fino a 3 km e Wikipedia fino a 10 km. I servizi pubblici possono limitare i risultati.'))),
+            R('span',null,'Ricerca automatica: catalogo nel raggio scelto, OpenStreetMap fino a 5 km (ristoranti fino a 1 km) e Wikipedia fino a 10 km. I servizi pubblici possono limitare i risultati.'))),
         R('section',{className:'rh-result-panel'},
           rhDiscoveryState==='error'&&R('p',{className:'rh-search-error',role:'alert'},rhStatus),
           R('div',{className:'rh-result-header'},
@@ -8934,9 +8954,9 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
              R('p',{className:'rh-map-context'},'🎯 Tocca un punto libero sulla mappa per esplorare da lì. Puoi anche cercare un indirizzo o usare il GPS.'),
              R(TripAtlasCanvas,{
              places:[{id:'rh_me',query:'Centro esplorazione',title:!now?'Tokyo (mappa di riferimento)':rhLocationMode==='manual'?'🎯 '+(rhManualLocation?.label||'Località scelta'):'📍 La nostra posizione',city:now?rhNearestCity(now.lat,now.lon):'Tokyo',category:'favorite',emoji:rhLocationMode==='manual'?'🎯':'◎',coords:now?[now.lat,now.lon]:TRIP_ATLAS_CENTERS.Tokyo},...limited.slice(0,80).map(p=>({...p,isFavorite:isFavourite({mapQuery:p.query,title:p.title})}))],
-             selectedId:rhChosen,onSelect:id=>setRhChosen(id),routeStops:[],city:now?rhNearestCity(now.lat,now.lon):'Tokyo',visible:rhShowMap,onToast:showToast,showAll:true,focusStamp:rhMapFocusStamp,
+             selectedId:rhChosen,onSelect:id=>setRhChosen(id),routeStops:[],city:now?rhNearestCity(now.lat,now.lon):'Tokyo',visible:rhShowMap,onToast:showToast,showAll:true,focusStamp:rhMapFocusStamp,centerRequest:rhCenterRequest,
              onAddPlace:p=>{if(p.coords)setAtlasGeocodes(prev=>({...prev,[atlasKey(p.query)]:p.coords}));openDayPicker({title:p.title,mapQuery:p.query,city:p.city,desc:rhReadableDescription(p.info)});},onChooseDay:p=>{if(p.coords)setAtlasGeocodes(prev=>({...prev,[atlasKey(p.query)]:p.coords}));openDayPicker({title:p.title,mapQuery:p.query,city:p.city,desc:rhReadableDescription(p.info)});},
-             onMapPoint:(lat,lon)=>{if(rhWithinJapan(lat,lon))rhChooseLocation({lat,lon,label:'Pin '+lat.toFixed(4)+', '+lon.toFixed(4)});},onOpenPlannedDay:day=>showDayInPlanner(day),onOpenDetails:rhShowDetails})),
+             onMapPoint:(lat,lon)=>{if(rhWithinJapan(lat,lon))rhChooseLocation({lat,lon,label:'Pin '+lat.toFixed(4)+', '+lon.toFixed(4)},true);},onOpenPlannedDay:day=>showDayInPlanner(day),onOpenDetails:rhShowDetails})),
           now&&visible.length>0 ? R('div',{className:'rh-cards'},...limited.map(p=>{
             const booked=fixedQuery(p.query),already=inPlan(p.query),plannedDays=p.plannedDays||[];
             const dayLabel=plannedDays.map(d=>'G'+(d+1)).join(' · ');

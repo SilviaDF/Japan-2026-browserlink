@@ -1,8 +1,8 @@
-/* Japan Travel Companion v75: versioned application-shell cache.
+/* Japan Travel Companion v76: versioned application-shell cache.
  * Site/PWA uses the current deployment scope; no Firebase/API responses are cached.
  */
-const JAPAN_SHELL_CACHE = 'japan2026-v75-curated-shell';
-const JAPAN_STATIC_CACHE = 'japan2026-v75-curated-static';
+const JAPAN_SHELL_CACHE = 'japan2026-v76-targeted-shell';
+const JAPAN_STATIC_CACHE = 'japan2026-v76-targeted-static';
 const JAPAN_SHELL_FILES = ['./index.html', './manifest.webmanifest'];
 const JAPAN_CDN_HOSTS = new Set([
   'cdn.tailwindcss.com', 'unpkg.com', 'cdn.jsdelivr.net', 'fonts.googleapis.com',
