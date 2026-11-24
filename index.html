@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#005f9e">
-    <meta name="app-build" content="2026-11-24-v74-explore">
+    <meta name="app-build" content="2026-11-24-v75-curated">
     <meta name="description" content="Diario di viaggio interattivo per il Giappone: itinerario, hotel, mappe, tè a Uji, checklist e spese.">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -5241,7 +5241,8 @@ function rhOsmCategory(tags) {
   if(has('leisure',/^(park|garden)$/))return 'nature';
   if(has('tourism',/^(viewpoint)$/))return 'love';
   if(has('amenity',/^(restaurant|cafe|fast_food)$/))return 'food';
-  return 'sight';
+  if(has('tourism',/^(attraction|museum|gallery)$/)||has('historic',/^(temple|shrine|castle|monument)$/))return 'sight';
+  return null;
 }
 // V54: compare discovered OSM objects with named items in the curated catalog.
 // A chain with multiple branches is NOT the same place solely because the name matches.
@@ -5308,19 +5309,32 @@ function rhOsmUsefulDescription(tags,category) {
   if(heritage==='temple')return 'Tempio storico da visitare.';
   return '';
 }
+function rhWikiVisitorCategory(title, description='') {
+  const name=String(title||''); const intro=String(description||'');
+  if(/\b(station|terminal|interchange|expressway|motorway|railway line|office|headquarters|apartment|residential|school|university|hospital|municipal|ward office|district court|power plant|company|corporation|hotel)\b/i.test(name))return null;
+  if(/\b(?:is|was) (?:an? |the )?(?:railway station|train station|subway station|office building|residential building|railway line|company|school|hospital|administrative district)\b/i.test(intro))return null;
+  const t=name+' '+intro;
+  if(/\b(railway museum|science museum|planetarium|observatory|technology museum)\b/i.test(t))return 'science';
+  if(/\b(nintendo museum|ghibli museum|video game museum|arcade)\b/i.test(name))return 'games';
+  if(/\b(bookshop|bookstore|library|literary museum)\b/i.test(name))return 'books';
+  if(/\b(tea house|teahouse|tea museum|tea shop)\b/i.test(name))return 'tea';
+  if(/\b(record shop|music museum|concert hall)\b/i.test(name))return 'music';
+  if(/\b(fashion museum|denim shop|department store)\b/i.test(name))return 'fashion';
+  if(/\b(food market|fish market|street food market|restaurant)\b/i.test(name))return 'food';
+  if(/\b(botanical garden|garden|public park|national park|bamboo grove)\b/i.test(name)||/\b(?:is|was) (?:an? |the )?(?:public park|botanical garden|Japanese garden)\b/i.test(intro))return 'nature';
+  if(/\b(temple|shrine|castle|museum|art gallery|aquarium|zoo|historic monument|heritage site|observation deck)\b/i.test(name)||/[- ](?:ji|jinja|taisha|dera)$/i.test(name)||/tokyo tower|tokyo skytree|kyoto tower|tsutenkaku|umeda sky building|shibuya sky/i.test(name)||/\b(?:is|was) (?:an? |the )?(?:Buddhist temple|Shinto shrine|museum|castle|art gallery|historic site)\b/i.test(intro))return 'sight';
+  return null;
+}
 function rhLowValueDiscovery(place) {
-  // Apply only to uncurated Wikipedia suggestions; never remove hotel, bookings or planner entries.
-  if(place?.source!=='wikipedia')return false;
-  const name=String(place.title||'');
-  if(/tokyo tower|tokyo skytree|kyoto tower|tsutenkaku|umeda sky building|shibuya sky|mori tower/i.test(name))return false;
-  return /(?:\b(?:office|headquarters|corporate|administrative|apartment|residential)\b|\b(?:tower|office building|skyscraper)\b|\b(?:railway station|metro station|subway station|bus terminal)\b|\b(?:expressway|motorway|interchange)\b)/i.test(name);
+  if(place?.source==='wikipedia')return !rhWikiVisitorCategory(place.title,place.info);
+  return false;
 }
 function rhWikipediaPlaces(data) {
   if(!Array.isArray(data?.query?.geosearch))throw new Error('Risposta geografica Wikipedia non valida');
   return data.query.geosearch.filter(p=>p.title&&Number.isFinite(Number(p.lat))&&Number.isFinite(Number(p.lon)))
     .filter(p=>p.lat>=24&&p.lat<=46&&p.lon>=122&&p.lon<=154)
     .map(p=>{
-      const category=rhCategoryFromText(p.title,'sight');
+      const category=rhWikiVisitorCategory(p.title);
       const title=String(p.title);
       const city=rhNearestCity(Number(p.lat),Number(p.lon));
       return {id:'rh_wiki_'+p.pageid,query:title+' '+city+' Japan',title,city,category,
@@ -5360,9 +5374,9 @@ function rhOsmPlaces(data) {
         aliases:[x.tags.name,x.tags['name:en'],x.tags['name:ja']].filter(Boolean),
         city:rhNearestCity(lat,lon),category,
         emoji:RH_CATEGORIES.find(c=>c[0]===category)?.[1]||'📍',coords:[lat,lon],
-        info:rhOsmUsefulDescription(x.tags,category),area:x.tags['addr:suburb']||x.tags['addr:quarter']||x.tags['addr:neighbourhood']||'',osm:true,source:'openstreetmap',
+        info:rhOsmUsefulDescription(x.tags,category)||({sight:'Attrazione culturale segnalata su OpenStreetMap; verifica interesse e accesso.',games:'Negozio o spazio dedicato a giochi e intrattenimento.',tea:'Negozio specializzato in tè.',books:'Libreria o biblioteca.',music:'Negozio di musica o strumenti.',fashion:'Negozio di abbigliamento.',science:'Luogo dedicato alla scienza.',nature:'Parco o giardino.',love:'Punto panoramico.',food:'Locale di ristorazione; verifica menu e orari.'}[category]||''),area:x.tags['addr:suburb']||x.tags['addr:quarter']||x.tags['addr:neighbourhood']||'',osm:true,source:'openstreetmap',
         url:`https://www.openstreetmap.org/${x.type}/${x.id}`};
-    });
+    }).filter(p=>p.category);
 }
 function rhDiscoveryErrorMessage(error) {
   const msg=String(error?.message||error||'Problema di rete');
@@ -8702,7 +8716,14 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
         // lighter than Overpass and is the primary automatic discovery source.
         // It also acts as a fallback when the public Overpass server is down.
         try {
-          const wiki=await wikipedia();
+          const rawWiki=await wikipedia();
+          const wiki=[];
+          for(let offset=0;offset<rawWiki.length;offset+=15){
+            const batch=rawWiki.slice(offset,offset+15);
+            let briefs={};
+            try{briefs=rhWikiBriefs(await request(rhWikiBriefUrl(batch.map(p=>p.id.slice(8))),{},9000));}catch(e){}
+            for(const p of batch){const info=briefs[p.id]||'';const category=rhWikiVisitorCategory(p.title,info);if(category)wiki.push({...p,category,info,emoji:RH_CATEGORIES.find(c=>c[0]===category)?.[1]||'📍'});}
+          }
           const deduped=[...collected];
           for(const p of wiki){if(!deduped.some(x=>rhSamePlace(x,p)))deduped.push(p);}
           collected=deduped;
@@ -8720,25 +8741,6 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
         rhAutoAttempted.current.delete(key);
         setRhStatus('✓ '+collected.length+' luoghi recuperati. '+notes.join(' · ')+
           '. Le nuove idee sono mostrate per prime; le tappe già previste hanno un’etichetta dedicata.');
-        // Optional enrichment: keep the working GeoSearch result visible immediately.
-        // Wikipedia extracts are fetched in small batches and never block discovery.
-        const wikiItems=collected.filter(p=>p.source==='wikipedia' && /^rh_wiki_\d+$/.test(p.id));
-        if(wikiItems.length){
-          (async()=>{
-            for(let offset=0;offset<wikiItems.length;offset+=15){
-              const batch=wikiItems.slice(offset,offset+15);
-              try{
-                const details=await request(rhWikiBriefUrl(batch.map(p=>p.id.slice(8))),{},9000);
-                const briefs=rhWikiBriefs(details);
-                if(!Object.keys(briefs).length)continue;
-                const enhance=places=>places.map(p=>briefs[p.id]?{...p,info:briefs[p.id]}:p);
-                if(current())setRhExternal(previous=>enhance(previous));
-                const entry=rhDiscoveryCache.current.get(key);
-                if(entry)entry.places=enhance(entry.places);
-              }catch(error){/* Introductory descriptions are optional; preserve GeoSearch. */}
-            }
-          })();
-        }
       }catch(error){
         if(current()){setRhDiscoveryState('error');setRhStatus('⚠️ '+rhDiscoveryErrorMessage(error));}
       }finally{if(current()){rhRequestInFlight.current=0;setRhBusy(false);}}
@@ -8840,11 +8842,12 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
           distance:rhDistanceKm(now.lat,now.lon,p.coords[0],p.coords[1]),
           plannedDays:daysInPlanner(p)}))
         .filter(p=>p.distance<=rhRadius+0.0001 && rhCategories.includes(p.category) &&
+          (p.plannedDays.length||p.category!=='sight'||! /\b(station|terminal|airport|hotel|office|headquarters)\b/i.test(p.title)) &&
           (!normalized||(p.title+' '+p.info+' '+p.city).toLocaleLowerCase().includes(normalized)))
         // Discoveries first; planned stops remain in the same list, visibly labelled.
         // Within each group, distance remains the sorting criterion.
         .sort((a,b)=>(Number(a.plannedDays.length>0)-Number(b.plannedDays.length>0)) ||
-          a.distance-b.distance||a.title.localeCompare(b.title,'it')):[];
+          Number(a.osm)-Number(b.osm)||a.distance-b.distance||a.title.localeCompare(b.title,'it')):[];
       // Deduplicate identical chains/sites in the same neighborhood without
       // silently merging different branches of a brand elsewhere in Japan.
       const visible=[];
