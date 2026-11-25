@@ -3108,9 +3108,18 @@ function DailyMapsLink({stops}){
  const link=(leg,i)=>R('a',{key:i,href:leg.url,target:'_blank',rel:'noopener noreferrer',className:'daily-maps-link'},legs.length===1?label:'Tratto '+(i+1)+' di '+legs.length);
  return legs.length===1?link(legs[0],0):R('details',{className:'daily-maps-list'},R('summary',null,label),R('p',null,'Apri i tratti in ordine per seguire tutte le tappe su Google Maps.'),legs.map(link));
 }
+function mapPlaceSummary(p){
+ const q=atlasKey(p.query||p.title||'');
+ if(q==='sakashitamon gate tokyo')return 'Viale alberato del Palazzo Imperiale di Tokyo. Il percorso di Inui-dōri inizia alla porta Sakashita-mon.';
+ const info=[V32_STOP_INFO[q],p.info,p.desc].map(x=>String(x||'').trim()).find(x=>x&&atlasKey(x)!==atlasKey(p.city||'')&&!/^(?:Day |Giorno |Da assegnare|Uno dei tuoi preferiti|★ Preferito)/i.test(x));
+ if(info){const first=info.match(/^.{12,170}?[.!?](?:\s|$)/u);return first?first[0].trim():info.length>170?info.slice(0,167).replace(/\s+\S*$/,'')+'…':info;}
+ const kind={hotel:'Alloggio',tea:'Tappa dedicata al tè',games:'Tappa dedicata ai videogiochi',books:'Luogo dedicato ai libri',food:'Sosta gastronomica',nature:'Spazio verde',science:'Tappa scientifica',music:'Luogo dedicato alla musica',fashion:'Tappa dedicata alla moda',love:'Tappa romantica',fixed:'Visita prenotata',favorite:'Luogo salvato nei preferiti'}[p.category]||'Tappa del viaggio';
+ return kind+(p.city?' · '+p.city:'');
+}
 function japan40Popup(place, actions={}){
  const shell=document.createElement('div');shell.className='j40-popup';
  const title=document.createElement('strong');title.textContent=place.title||place.query||'Luogo';shell.appendChild(title);
+ const description=document.createElement('p');description.textContent=mapPlaceSummary(place);shell.appendChild(description);
  const days=Array.isArray(place.plannedDays)?place.plannedDays:[];
  if(place.isFavorite){
    const saved=document.createElement('div');saved.className='j58-popup-favorite';
@@ -4124,6 +4133,17 @@ const BOOKING_ACCESS={
   16:['京都府宇治市小倉町神楽田56番地','Dalla stazione Kintetsu Ogura, uscita est.','Prepara il QR del biglietto e il documento di identità.'],
   17:['東京都三鷹市下連雀1丁目1番83号','Da Mitaka, uscita sud verso il museo.','Porta il biglietto nel formato previsto dalla tua prenotazione.']
 };
+function upgradeGardenRoute(routes,channel){
+ const route=routes[3],stop="SQUARE ENIX GARDEN · Shibuya Sakura Stage";
+ if(!Array.isArray(route)||route.length>=20)return routes;
+ const flag='japan2026:garden90:'+channel;
+ if(readJapanStore(flag,false))return routes;
+ writeJapanStore(flag,true);
+ if(route.some(q=>atlasKey(q)===atlasKey(stop)))return routes;
+ const i=route.findIndex(q=>atlasKey(q)===atlasKey('Hachiko Statue Shibuya Tokyo'));
+ const at=i<0?route.length:i+1;
+ return {...routes,3:[...route.slice(0,at),stop,...route.slice(at)]};
+}
 function upgradeMotherRoute(routes,channel){
  const stop='MOTHER Shop Shibuya PARCO 6F Tokyo';
  const prior=routes[17];
@@ -4204,6 +4224,7 @@ const TRIP_ATLAS_COORDS = {
 const TRIP_ATLAS_CENTERS = {Tokyo:[35.681,139.76],Nagoya:[35.170,136.900],Kyoto:[35.005,135.768],Osaka:[34.680,135.505],Uji:[34.892,135.802],Nara:[34.686,135.839]};
 // V32: short, practical explanations for the preplanned itinerary; editorial summaries, not verified opening details.
 const V32_STOP_INFO = Object.fromEntries(Object.entries({
+ "SQUARE ENIX GARDEN · Shibuya Sakura Stage":"Negozio ufficiale Square Enix, lato SHIBUYA, 3° piano, dove cercare la borsa Cactuar (サボテンダー).",
  "MOTHER Shop Shibuya PARCO 6F Tokyo":"Negozio ufficiale della serie MOTHER / EarthBound. Dal 12 dicembre al 24 gennaio, ore 10:00–21:00. Ingresso libero al 6º piano di Shibuya PARCO.",
  "Kinkakuji Temple Kyoto": "Padiglione d’Oro: una delle visite iconiche di Kyoto, a nord-ovest di Arashiyama (servono mezzi).",
  "Daikanyama T-Site Tokyo": "Libreria Tsutaya Books, architettura e caffè per una pausa letteraria nel quartiere di Daikanyama.",
@@ -4312,6 +4333,7 @@ const JAPAN41_KNOWN_PIN_ALIASES = {
 // V48: verified official building addresses; map coordinates indicate complexes, not indoor shop entrances.
 // Generic terms such as 'Pokemon Center Tokyo' intentionally have no assigned pin.
 const JAPAN48_KNOWN_VENUES={
+ [atlasKey("SQUARE ENIX GARDEN · Shibuya Sakura Stage")]:{coords:[35.657128,139.701833],address:"SQUARE ENIX GARDEN, Shibuya Sakura Stage SHIBUYA SIDE 3F, 1-4 Sakuragaokacho, Shibuya, Tokyo"},
  'pokemon center mega tokyo':{coords:[35.7289,139.7191],address:'Sunshine City alpa 2F, 3-1-2 Higashi-Ikebukuro, Toshima, Tokyo, Japan'},
  'pokemon center mega tokyo sunshine city':{coords:[35.7289,139.7191],address:'Sunshine City alpa 2F, 3-1-2 Higashi-Ikebukuro, Toshima, Tokyo, Japan'},
  'pokemon center shibuya':{coords:[35.6621,139.6989],address:'Shibuya PARCO 6F, 15-1 Udagawacho, Shibuya, Tokyo, Japan'},
@@ -4448,7 +4470,7 @@ async function japan24GetPosition() {
   }
 }
 
-function TripAtlasCanvas({places, selectedId, onSelect, routeStops, city, visible, onToast, extraCoords={}, showAll=false, onAddPlace=null, onChooseDay=null, onOpenPlannedDay=null, onOpenDetails=null, focusStamp=0, onMapPoint=null, centerRequest=null}) {
+function TripAtlasCanvas({places, selectedId, onSelect, routeStops, city, visible, onToast, extraCoords={}, showAll=false, onAddPlace=null, onChooseDay=null, onOpenPlannedDay=null, onOpenDetails=null, focusStamp=0, onMapPoint=null, centerRequest=null, onMapPlaces=null}) {
  const R=React.createElement;
  const containerRef=React.useRef(null),mapRef=React.useRef(null),markerRef=React.useRef(new Map());
  const gpsMarkerRef=React.useRef(null),onSelectRef=React.useRef(onSelect),currentDataRef=React.useRef(null);
@@ -4485,6 +4507,7 @@ function TripAtlasCanvas({places, selectedId, onSelect, routeStops, city, visibl
       dragRotate:false,pitchWithRotate:false,attributionControl:true});
     mapRef.current=map;
     map.on('click',e=>{if(e.originalEvent?.target?.closest?.('.j40-map-pin,.maplibregl-popup,.maplibregl-ctrl'))return;pointRef.current?.(e.lngLat.lat,e.lngLat.lng);});
+    map.on('dragend',e=>{if(pointRef.current&&e.originalEvent){const c=map.getCenter();pointRef.current(c.lat,c.lng);}});
     if(GL.NavigationControl)map.addControl(new GL.NavigationControl({showCompass:false}),'bottom-right');
     map.on('load',()=>{if(!active)return;loaded=true;setMapState('ready');setErrorText('');
       const data=currentDataRef.current;
@@ -4563,6 +4586,29 @@ function TripAtlasCanvas({places, selectedId, onSelect, routeStops, city, visibl
    gpsMarkerRef.current=new GL.Marker({element:el,anchor:'center'}).setLngLat([gps[1],gps[0]]).addTo(map);
  },[gps,engineReady]);
  React.useEffect(()=>{if(centerRequest&&mapState==='ready'&&mapRef.current)mapRef.current.jumpTo({center:[centerRequest.lon,centerRequest.lat],zoom:centerRequest.preserveZoom?mapRef.current.getZoom():14});},[centerRequest,mapState]);
+ React.useEffect(()=>{
+   const map=mapRef.current;
+   if(!map||!onMapPlaces||!centerRequest||mapState!=='ready')return;
+   const collect=()=>{
+     const layers=(map.getStyle()?.layers||[]).filter(l=>l['source-layer']==='poi'&&l.type==='symbol').map(l=>l.id);
+     if(!layers.length)return;
+     const features=map.queryRenderedFeatures(undefined,{layers});
+     const found=[];
+     for(const f of features){
+       if(f.geometry?.type!=='Point')continue;
+       const props=f.properties||{},type=String(props.subclass||props.class||'').toLowerCase();
+       const name=props['name:en']||props.name;if(!name)continue;
+       const category=rhOsmCategory({name,shop:type,amenity:type,tourism:type,leisure:type,historic:type,building:type});
+       if(!category||category==='food')continue;
+       const [lon,lat]=f.geometry.coordinates;
+       const id='tile_'+lat.toFixed(4)+'_'+lon.toFixed(4)+'_'+name;
+       found.push({id,title:name,query:name,coords:[lat,lon],osm:true,category,info:({sight:'Luogo di interesse culturale',nature:'Parco o giardino',love:'Punto panoramico',books:'Libreria o biblioteca',games:'Luogo dedicato ai giochi',tea:'Negozio di tè',music:'Luogo dedicato alla musica',science:'Luogo dedicato alla scienza',fashion:'Negozio di abbigliamento'}[category]||'Luogo di interesse')+' segnalato sulla mappa.'});
+     }
+     onMapPlaces(found);
+   };
+   if(map.loaded())collect();else map.once('idle',collect);
+   return ()=>map.off('idle',collect);
+ },[mapState,centerRequest,onMapPlaces]);
  const focusRoute=()=>{
    const map=mapRef.current;if(!map)return;
    const pts=routePoints.length?routePoints:validPlaces.map(p=>p.coords);
@@ -5759,12 +5805,13 @@ function rhDiscoveryErrorMessage(error) {
         "hotel": "Kinshicho Sky Eight",
         "title": "Harajuku → Omotesandō → Shibuya · Zelda, Pokémon e Tokyo iconica",
         "transit": "Da Kinshichō prendete la Hanzōmon verso Omotesandō oppure JR verso Harajuku. Si prosegue a piedi da Harajuku verso Shibuya, senza tornare indietro.",
-        "walkRoute": "Meiji Jingū → Omotesandō → Nintendo TOKYO / Pokémon Center Shibuya → Hachikō / Shibuya Crossing",
+        "walkRoute": "Meiji Jingū → Omotesandō → Nintendo TOKYO / Pokémon Center Shibuya → Hachikō / Shibuya Crossing → SQUARE ENIX GARDEN",
         "stops": [
             "Meiji Jingu Shrine Tokyo",
             "Omotesando Hills Tokyo",
             "Nintendo Tokyo Shibuya PARCO",
-            "Hachiko Statue Shibuya Tokyo"
+            "Hachiko Statue Shibuya Tokyo",
+            "SQUARE ENIX GARDEN · Shibuya Sakura Stage"
         ],
         "highlights": [
             "🌿 Camminata nel bosco del Meiji Jingū, poi vie laterali di Harajuku e Omotesandō.",
@@ -5773,7 +5820,7 @@ function rhDiscoveryErrorMessage(error) {
         ],
         "mustSee": "Meiji Jingū e Shibuya Crossing",
         "forUs": "Nintendo, Zelda, Mario, Pokémon, moda",
-        "flexNote": "Ginkgo Avenue soltanto se rimane tempo: richiede deviazione"
+        "flexNote": "A Shibuya Sakura Stage cercate la borsa Cactuar al SQUARE ENIX GARDEN (3F). Ginkgo Avenue soltanto se rimane tempo: richiede deviazione"
     },
     {
         "day": "Day 5",
@@ -6337,21 +6384,22 @@ function App() {
     
     const [rhCategories,setRhCategories]=React.useState(()=>{
       const value=readJapanStore('japan2026:rhCategoriesV34',RH_DEFAULT_CATEGORIES);
-      return Array.isArray(value)?value.filter(v=>RH_DEFAULT_CATEGORIES.includes(v)):RH_DEFAULT_CATEGORIES;
+      return Array.isArray(value)?value.filter(v=>v==='seasonal'||RH_DEFAULT_CATEGORIES.includes(v)):RH_DEFAULT_CATEGORIES;
     });
     const [rhSearch,setRhSearch]=React.useState('');
     const [rhDiscoveryState,setRhDiscoveryState]=React.useState('idle');
     // Memory-only request cache: never store GPS coordinates or POI lookups in Firebase/localStorage.
     const rhDiscoveryCache=React.useRef(new Map());
-    const rhAutoAttempted=React.useRef(new Map());
+    const rhRequestController=React.useRef(null);
     
     const rhGeneration=React.useRef(0);
+    const [rhMapPlaces,setRhMapPlaces]=React.useState([]);
     const [rhExternal,setRhExternal]=React.useState([]);
     const [rhBusy,setRhBusy]=React.useState(false);
     const [rhChosen,setRhChosen]=React.useState('');
     const [rhLimit,setRhLimit]=React.useState(24);
     const [minutesAvailable,setMinutesAvailable]=React.useState(0);
-    const [seasonOnly,setSeasonOnly]=React.useState(false);
+    const includeSeasonal=rhCategories.includes('seasonal');
     const [bagNote,setBagNote]=React.useState(()=>readJapanStore('japan2026:bagNote',''));
     const bagField=()=>React.createElement('label',{className:'bag-note'},'Hotel o deposito bagagli a Tokyo',React.createElement('input',{value:bagNote,placeholder:'Nome o indirizzo',onChange:e=>{setBagNote(e.target.value);writeJapanStore('japan2026:bagNote',e.target.value);}}));
     const [rhShowMap,setRhShowMap]=React.useState(true);
@@ -6382,7 +6430,7 @@ function App() {
                     window.localStorage.setItem(key,'1');
                 }
             }catch(e){}
-            return upgradeMotherRoute(saved,'local');
+            return upgradeGardenRoute(upgradeMotherRoute(saved,'local'),'local');
         }
         return {};
     });
@@ -6476,7 +6524,7 @@ function App() {
                       localStorage.setItem(marker,'1');
                     }
                 }catch(e){}
-                setCustomDayRoutes(()=>upgradeMotherRoute(upgraded,'cloud'));
+                setCustomDayRoutes(()=>upgradeGardenRoute(upgradeMotherRoute(upgraded,'cloud'),'cloud'));
                 return;
             }
             if (setters[key]) setters[key](() => key==='fixedEventTimes' ? {...DEFAULT_FIXED_EVENT_TIMES,...(value && typeof value==='object' ? value : {})} : value);
@@ -7821,7 +7869,7 @@ function App() {
         dailyItinerary.forEach((d,didx)=>d.stops.forEach(st=>{
           const c=/\bnara\b/i.test(st)?'Nara':/\bkyoto\b/i.test(st)?'Kyoto':/\buji\b/i.test(st)?'Uji':/\bnagoya\b/i.test(st)?'Nagoya':/\bosaka\b/i.test(st)?'Osaka':d.city;
           const isFixed=!!PLANNER_BOOKING_STOPS[didx]&&atlasKey(st)===atlasKey(PLANNER_BOOKING_STOPS[didx]);
-          push(st,st,c,isFixed?'fixed':/nintendo|ghibli/i.test(st)?'games':/tea|byodoin|fukujuen/i.test(st)?'tea':'sight',isFixed?'🎟️':/nintendo|ghibli/i.test(st)?'🎮':'⛩️',V32_STOP_INFO[atlasKey(st)]||d.city,{isDay:didx===idx,dayIndex:didx});
+          push(st,st,c,isFixed?'fixed':/nintendo|ghibli|square enix/i.test(st)?'games':/tea|byodoin|fukujuen/i.test(st)?'tea':'sight',isFixed?'🎟️':/nintendo|ghibli/i.test(st)?'🎮':'⛩️',V32_STOP_INFO[atlasKey(st)]||d.city,{isDay:didx===idx,dayIndex:didx});
         }));
         // Curated interests have grounded coordinates already in the app.
         areaExplorerSpots.forEach(p=>{
@@ -8385,7 +8433,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
         const pos=await japan24GetPosition();
         if(intent!==rhLocationIntent.current)return;
         if(!rhWithinJapan(pos.lat,pos.lon)){setRhStatus('Il GPS è fuori dal Giappone. Cerca un indirizzo o scegli un punto sulla mappa.');return;}
-        setRhLocationMode('gps');setRhCenterRequest(pos);setRhPosition(pos);setRhExternal([]);setRhDiscoveryState('idle');setRhChosen('');
+        setRhMapPlaces([]);setRhLocationMode('gps');setRhCenterRequest(pos);setRhPosition(pos);setRhExternal([]);setRhDiscoveryState('idle');setRhChosen('');
         const city=rhNearestCity(pos.lat,pos.lon);
         setRhStatus(`📍 Posizione disponibile · ${city} · precisione dichiarata ${pos.accuracy===null?'non nota':'~'+pos.accuracy+' m'}. Distanze in linea d’aria.`);
       }catch(error){if(intent===rhLocationIntent.current)setRhStatus('GPS non disponibile. Cerca un indirizzo o scegli un punto sulla mappa.');}
@@ -8418,25 +8466,30 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
         setRhStatus('✓ '+cached.places.length+' luoghi recuperati dalla ricerca precedente.');
         return;
       }
-      if(automatic&&rhAutoAttempted.current.get(key)&&time-rhAutoAttempted.current.get(key)<2*60*1000){setRhDiscoveryState('ready');setRhStatus('Catalogo disponibile. Per riprovare online, apri Interessi e filtri.');return;}
-      rhAutoAttempted.current.set(key,time);
       
       setRhBusy(true);setRhDiscoveryState('loading');
       setRhStatus(automatic?'✨ Cerco luoghi culturali e attrazioni vicine…':'🔎 Cerco anche negozi e locali OpenStreetMap…');
+      rhRequestController.current?.abort();
+      const task=new AbortController();rhRequestController.current=task;
       const request=async(url,options={},timeoutMs=12500)=>{
         const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeoutMs);
+        const cancel=()=>controller.abort();task.signal.addEventListener('abort',cancel,{once:true});
         try {
           const response=await fetch(url,{...options,signal:controller.signal,credentials:'omit',mode:'cors'});
           if(!response.ok)throw new Error('HTTP '+response.status+' · '+new URL(url).hostname);
           return await response.json();
-        }finally{clearTimeout(timer);}
+        }finally{clearTimeout(timer);task.signal.removeEventListener('abort',cancel);}
       };
       try {
         const interests=rhCategories.filter(c=>RH_DEFAULT_CATEGORIES.includes(c));
         if(!interests.length){setRhDiscoveryState('ready');setRhStatus('Risultati dal catalogo di viaggio.');return;}
         const body=new URLSearchParams({data:rhOverpassQuery(center.lat,center.lon,Math.min(distanceKm,5)*1000,interests)});
-        const data=await request('https://overpass.private.coffee/api/interpreter',{method:'POST',body},16000);
-        const collected=rhOsmPlaces(data).filter(p=>interests.includes(p.category));
+        let collected;
+        for(const url of ['https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter']){
+          if(!current()||task.signal.aborted)return;
+          try{const data=await request(url,{method:'POST',body},18000);collected=rhOsmPlaces(data).filter(p=>interests.includes(p.category));break;}
+          catch(error){if(url.includes('private.coffee'))throw error;}
+        }
         const notes=['OpenStreetMap · luoghi specializzati'];
         if(!current())return;
         if(!collected.length){
@@ -8446,7 +8499,6 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
         setRhExternal(collected);setRhDiscoveryState('ready');
         rhDiscoveryCache.current.set(key,{at:Date.now(),places:collected});
         if(rhDiscoveryCache.current.size>8)rhDiscoveryCache.current.delete(rhDiscoveryCache.current.keys().next().value);
-        rhAutoAttempted.current.delete(key);
         setRhStatus('✓ '+collected.length+' luoghi recuperati. '+notes.join(' · ')+
           '. Le tappe già previste sono contrassegnate.');
       }catch(error){
@@ -8460,13 +8512,13 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
       rhGeneration.current++;setRhBusy(false);setRhExternal([]);
       if(activeTab!=='rightnow'||!center||!rhCategories.length)return;
       const handle=setTimeout(()=>rhLoadOsm({automatic:true}),1200);
-      return ()=>clearTimeout(handle);
+      return ()=>{clearTimeout(handle);rhRequestController.current?.abort();rhGeneration.current++;};
     },[activeTab,rhLocationMode,rhPosition,rhManualLocation,rhRadius,rhCategories]);
     // V35: choose a reference location for research without moving or impersonating GPS.
     const rhChooseLocation=(place,fromPin=false)=>{
       if(!place||!Number.isFinite(place.lat)||!Number.isFinite(place.lon))return;
       rhLocationIntent.current++;setRhPlaceBusy(false);
-      setRhCenterRequest({...place,preserveZoom:fromPin});rhGeneration.current++;setRhManualLocation(place);setRhLocationMode('manual');setRhPlaceOptions([]);
+      setRhMapPlaces([]);setRhCenterRequest({...place,preserveZoom:fromPin});rhGeneration.current++;setRhManualLocation(place);setRhLocationMode('manual');setRhPlaceOptions([]);
       setRhExternal([]);setRhDiscoveryState('idle');setRhChosen('');setRhLimit(24);
       setRhStatus('🎯 Esplorazione da '+place.label+'. Le distanze sono calcolate da questo punto, non dalla tua posizione GPS.');
     };
@@ -8543,11 +8595,13 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
 
       favourites.forEach(p=>insert({title:p.title||p.name,query:p.mapQuery||p.query,city:p.city,info:'★ Preferito · '+(p.category||''),category:rhCategoryFromText(p.title||p.name||p.query||'')}));
       dailyItinerary.forEach((d,i)=>getSavedDayStops(i).forEach(st=>insert({title:rhTitleFromQuery(st),query:st,city:d.city,category:rhCategoryFromText(st),info:V32_STOP_INFO[atlasKey(st)]||''})));
+      insert({title:'Rekihaku · Museo nazionale di storia giapponese',query:'National Museum of Japanese History Sakura Chiba',coords:[35.7245,140.2191],city:'Sakura (Chiba)',category:'sight',info:'Museo dedicato alla storia e alla vita quotidiana in Giappone, accanto al parco del castello di Sakura.'});
+      insert({title:'Parco del castello di Sakura',query:'Sakura Castle Ruins Chiba',coords:[35.7220,140.2167],city:'Sakura (Chiba)',category:'nature',info:'Parco storico che racchiude i resti del castello di Sakura.'});
       insert({title:'Mandarake Nagoya',query:'Mandarake Nagoya Osu',city:'Nagoya',category:'games',info:'Seconda mano a Ōsu per videogiochi e collezionabili, 3-18-21 Ōsu. Controllate i reparti sul posto.'});
       insert({title:'Isuien Garden',query:'Isuien Garden Nara',city:'Nara',category:'nature',info:'Giardino paesaggistico vicino a Tōdai-ji. Scegliete questo oppure il vicino Yoshikien lungo la passeggiata.'});
       routeIdeas.forEach(p=>insert({...p,query:p.mapQuery,category:p.group==='wow'?'love':p.group==='autumn'?'nature':rhCategoryFromText(p.title+' '+p.mapQuery),info:p.desc}));
       seasonalIdeas.forEach(p=>insert({title:p.title,query:p.mapQuery,city:p.city,category:'nature',info:p.desc}));
-      rhExternal.forEach(insert);
+      rhExternal.forEach(insert);rhMapPlaces.forEach(insert);
 
       const normalized=rhSearch.trim().toLocaleLowerCase();
       const allEntries=[...pool.values()];
@@ -8560,9 +8614,11 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
       // The curated version remains visible and is marked if it is in a route.
       const external=allEntries.filter(p=>p.osm && !catalog.some(c=>rhSamePlace(p,c)));
       const candidates=[...catalog,...external];
+      const seasonalKeys=new Set(seasonalIdeas.map(p=>questKey(p.mapQuery)));
+      const inSeason=p=>seasonalKeys.has(questKey(p.query))||/illumina|foliage|momiji|aceri|autunn|rikugien|keyakizaka|midosuji|nakanoshima|meiji jingu gaien/i.test(p.title+' '+p.info+' '+p.query);
       const nowFiltered=now?candidates.map(p=>({...p,
           distance:rhDistanceKm(now.lat,now.lon,p.coords[0],p.coords[1])}))
-        .filter(p=>p.distance<=rhRadius+0.0001 && rhCategories.includes(p.category) &&
+        .filter(p=>p.distance<=rhRadius+0.0001 && (rhCategories.includes(p.category)||(includeSeasonal&&inSeason(p))) &&
           (!normalized||(p.title+' '+p.info+' '+p.city).toLocaleLowerCase().includes(normalized)))
         .map(p=>({...p,plannedDays:daysInPlanner(p)}))
         .filter(p=>p.plannedDays.length||!rhInfrastructure(p.title+' '+p.query))
@@ -8575,14 +8631,12 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
       const visible=[];
       for(const p of nowFiltered){if(!visible.some(q=>rhSamePlace(p,q)))visible.push(p);}
       return visible;
-    },[activeTab,now,customDayRoutes,atlasGeocodes,favourites,rhExternal,rhRadius,rhCategories,rhSearch]);
+    },[activeTab,now,customDayRoutes,atlasGeocodes,favourites,rhExternal,rhMapPlaces,rhRadius,rhCategories,rhSearch]);
     const renderRightHereNow=()=>{
       const R=React.createElement;
       const visitMinutes=p=>/museum|museo|teamlab/i.test(p.title+' '+p.query)?90:({tea:30,food:45,nature:40,science:60,love:30}[p.category]||20);
       const estimatedMinutes=p=>Math.ceil((p.distance*1.3/4*60+visitMinutes(p))/5)*5;
-      const seasonalKeys=new Set(seasonalIdeas.map(p=>questKey(p.mapQuery)));
-      const inSeason=p=>seasonalKeys.has(questKey(p.query))||/illumina|foliage|momiji|aceri|autunn|rikugien|keyakizaka|midosuji|nakanoshima|meiji jingu gaien/i.test(p.title+' '+p.info+' '+p.query);
-      const visible=visibleNearby.filter(p=>(!seasonOnly||inSeason(p))&&(!minutesAvailable||estimatedMinutes(p)<=minutesAvailable));
+      const visible=visibleNearby.filter(p=>!minutesAvailable||estimatedMinutes(p)<=minutesAvailable);
       const limited=visible.slice(0,rhLimit);
       const jpDate=japanLocalISO();
       const actualDay=TRIP_CALENDAR_2026.indexOf(jpDate);
@@ -8605,7 +8659,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
       };
       return R('div',{className:'rh-page'},
         R('section',{className:'rh-hero'},
-          R('div',null,R('h2',null,'Esplora i dintorni'),R('p',null,'Trascina il pin di partenza, tocca la mappa o cerca un indirizzo per vedere i luoghi vicini.')),
+          R('div',null,R('h2',null,'Esplora i dintorni'),R('p',null,'Trascina il pin, tocca un punto o sposta la mappa per cercare al centro della nuova zona.')),
           R('button',{type:'button',className:'rh-primary',onClick:rhReadPosition},'◎ Usa il GPS')),
         R('section',{className:'rh-location','aria-label':'Punto di partenza'},
           R('div',{className:'rh-location-manual'},
@@ -8624,8 +8678,8 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
         R('span',{className:/^(GPS non disponibile|Il GPS è fuori|⚠️)/.test(rhStatus)?'gps-feedback':'sr-only',role:'status','aria-live':'polite'},rhStatus),
         R('details',{className:'rh-filters',open:true},R('summary',null,'Interessi e filtri · '+rhCategories.length+' selezionati · '+rhRadius+' km'+(minutesAvailable?' · '+minutesAvailable+' min':'')),
           R('div',{className:'rh-section-heading'},R('div',null,R('h3',null,'I nostri interessi'),R('p',null,'Tocca per includere o escludere. Le categorie selezionate restano salvate su questo dispositivo.')),
-            R('div',{className:'rh-filter-actions'},R('button',{type:'button',onClick:()=>setRhCategories(RH_DEFAULT_CATEGORIES)},'Tutte'),R('button',{type:'button',onClick:()=>setRhCategories([])},'Nessuna'))),
-          R('div',{className:'rh-chips'},...catButtons,R('button',{type:'button',className:'rh-chip '+(seasonOnly?'is-selected':''),'aria-pressed':seasonOnly,onClick:()=>{setSeasonOnly(v=>!v);setRhLimit(24);}},'🍁 Solo autunno e luci')),
+            R('div',{className:'rh-filter-actions'},R('button',{type:'button',onClick:()=>setRhCategories([...RH_DEFAULT_CATEGORIES,'seasonal'])},'Tutte'),R('button',{type:'button',onClick:()=>setRhCategories([])},'Nessuna'))),
+          R('div',{className:'rh-chips'},...catButtons,R('button',{type:'button',className:'rh-chip '+(includeSeasonal?'is-selected':''),'aria-pressed':includeSeasonal,onClick:()=>{setRhCategories(prev=>prev.includes('seasonal')?prev.filter(v=>v!=='seasonal'):[...prev,'seasonal']);setRhLimit(24);}},'🍁 Autunno e luci')),
           R('div',{className:'rh-options'},
             R('label',null,'Tempo disponibile ',R('select',{value:minutesAvailable,onChange:e=>{setMinutesAvailable(Number(e.target.value));setRhLimit(24);}},[0,30,60,120].map(v=>R('option',{key:v,value:v},v?v+' min':'Qualsiasi')))),
             R('label',null,'Entro ',R('select',{value:rhRadius,onChange:e=>{setRhRadius(Number(e.target.value));setRhLimit(24);}},[0.5,1,2,3,5,10,20].map(v=>R('option',{key:v,value:v},v+' km')))),
@@ -8646,9 +8700,10 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
                R('span',null,R('span',{className:'j58-legend-icon j58-legend-fav'},'★'),' Preferito')),
              R(TripAtlasCanvas,{
              places:[{id:'rh_me',query:'Centro esplorazione',title:!now?'Tokyo (mappa di riferimento)':rhLocationMode==='manual'?'🎯 '+(rhManualLocation?.label||'Località scelta'):'📍 La nostra posizione',city:now?rhNearestCity(now.lat,now.lon):'Tokyo',category:'favorite',emoji:rhLocationMode==='manual'?'🎯':'◎',coords:now?[now.lat,now.lon]:TRIP_ATLAS_CENTERS.Tokyo},...limited.map(p=>({...p,isFavorite:isFavourite({mapQuery:p.query,title:p.title})}))],
-             selectedId:rhChosen,onSelect:id=>setRhChosen(id),routeStops:[],city:now?rhNearestCity(now.lat,now.lon):'Tokyo',visible:rhShowMap,onToast:showToast,showAll:true,focusStamp:rhMapFocusStamp,centerRequest:rhCenterRequest,
+             selectedId:rhChosen,onSelect:id=>setRhChosen(id),routeStops:[],city:now?rhNearestCity(now.lat,now.lon):'Tokyo',visible:rhShowMap,onToast:showToast,showAll:true,focusStamp:rhMapFocusStamp,centerRequest:rhCenterRequest,onMapPlaces:setRhMapPlaces,
              onAddPlace:p=>{if(p.coords)setAtlasGeocodes(prev=>({...prev,[atlasKey(p.query)]:p.coords}));openDayPicker({title:p.title,mapQuery:p.query,city:p.city,desc:rhReadableDescription(p.info)});},onChooseDay:p=>{if(p.coords)setAtlasGeocodes(prev=>({...prev,[atlasKey(p.query)]:p.coords}));openDayPicker({title:p.title,mapQuery:p.query,city:p.city,desc:rhReadableDescription(p.info)});},
              onMapPoint:(lat,lon)=>{if(rhWithinJapan(lat,lon))rhChooseLocation({lat,lon,label:'Pin '+lat.toFixed(4)+', '+lon.toFixed(4)},true);},onOpenPlannedDay:day=>showDayInPlanner(day),onOpenDetails:rhShowDetails})),
+          now&&R('p',{className:'rh-disclaimer',role:'status'},rhStatus),
           now&&visible.length>0 ? R('div',{className:'rh-cards'},...limited.map(p=>{
             const plannedDays=p.plannedDays||[],booked=plannedDays.some(day=>atlasKey(PLANNER_BOOKING_STOPS[day])===atlasKey(p.query));
             const dayLabel=plannedDays.map(d=>'D'+(d+1)).join(' · ');
@@ -8660,13 +8715,13 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
                   (booked?R('span',{className:'rh-fixed'},'🎟️ Prenotazione fissa'):null)),
                 R('h4',null,p.title),
                 p.area&&R('small',{className:'rh-place-area'},p.area+' · '+p.city),
-                rhReadableDescription(p.info)&&R('p',null,rhReadableDescription(p.info))),
+                R('p',null,mapPlaceSummary(p))),
               R('div',{className:'rh-place-actions'},
                 R('button',{type:'button',className:'rh-add j45-quest-btn',onClick:()=>{if(p.coords)setAtlasGeocodes(prev=>({...prev,[atlasKey(p.query)]:p.coords}));openDayPicker({title:p.title,mapQuery:p.query,city:p.city,desc:rhReadableDescription(p.info)});}},questLabel(p)),
                 starButton({title:p.title,mapQuery:p.query,city:p.city,category:p.category}, {category:p.category}, 'favorite-star favorite-star-small rh-fav-action'),
                 R('button',{type:'button',onClick:()=>rhShowOnMap(p),'aria-label':'Apri la mappa centrata su '+p.title},'⌖ Mappa'),
                 R('a',{href:j45GoogleMapsLink(p),className:'j45-maps-link j52-compact-maps',target:'_blank',rel:'noopener noreferrer',title:'Apri su Google Maps','aria-label':'Apri '+p.title+' su Google Maps'},'↗')));
-          })) : now&&R('div',{className:'rh-empty'},seasonOnly?'Nessuna proposta stagionale con questi filtri. Prova un raggio maggiore o disattiva Solo autunno e luci.':minutesAvailable&&visibleNearby.length?'Nessuna visita rientra nel tempo scelto. Modifica il filtro Tempo disponibile.':rhCategories.length===0?'Seleziona almeno un interesse per vedere le proposte.':rhDiscoveryState==='loading'?'✨ Sto cercando luoghi intorno a te…':rhDiscoveryState==='error'?'La ricerca online non ha restituito proposte utilizzabili. Leggi il motivo qui sopra; i luoghi già disponibili restano consultabili.':rhDiscoveryState==='idle'?'Sto preparando la ricerca dei luoghi vicini…':'Nessun luogo con coordinate trovato entro questo raggio. Prova un altro quartiere o amplia il raggio.'),
+          })) : now&&R('div',{className:'rh-empty'},minutesAvailable&&visibleNearby.length?'Nessuna visita rientra nel tempo scelto. Modifica il filtro Tempo disponibile.':rhCategories.length===0?'Seleziona almeno un interesse per vedere le proposte.':rhDiscoveryState==='loading'?'✨ Sto cercando luoghi intorno a te…':rhDiscoveryState==='error'?'La ricerca online non ha restituito proposte utilizzabili. Leggi il motivo qui sopra; i luoghi già disponibili restano consultabili.':rhDiscoveryState==='idle'?'Sto preparando la ricerca dei luoghi vicini…':'Nessun luogo con coordinate trovato entro questo raggio. Prova un altro quartiere o amplia il raggio.'),
           now&&visible.length<5&&rhRadius<20&&rhCategories.length>0&&R('button',{type:'button',className:'rh-secondary',onClick:()=>setRhRadius([1,2,3,5,10,20].find(v=>v>rhRadius))},'Amplia il raggio a '+[1,2,3,5,10,20].find(v=>v>rhRadius)+' km'),
           now&&visible.length>rhLimit&&R('button',{type:'button',className:'rh-load-more',onClick:()=>setRhLimit(v=>v+12)},'Mostra altri '+Math.min(12,visible.length-rhLimit)+' luoghi ('+rhLimit+'/'+visible.length+')'),
           now&&R('div',{className:'rh-bottom-actions'},R('button',{type:'button',onClick:()=>{showDayInPlanner(targetDay);}},'🗓️ Apri la giornata '+(targetDay+1)+' nel Planner'))),
