@@ -4507,8 +4507,10 @@ function TripAtlasCanvas({places, selectedId, onSelect, routeStops, city, visibl
      const route=routeStops.some(q=>atlasKey(q)===atlasKey(place.query));
      const node=japan40CreatePin(place,place.id===selectedId,route);
      node.addEventListener('click',()=>onSelectRef.current?.(place.id));
-     const marker=new GL.Marker({element:node,anchor:'bottom'}).setLngLat([place.coords[1],place.coords[0]]).addTo(map);
-     if(GL.Popup)marker.setPopup(new GL.Popup({offset:24,maxWidth:'300px'}).setDOMContent(
+     const searchOrigin=place.id==='rh_me' && Boolean(onMapPoint);
+     const marker=new GL.Marker({element:node,anchor:'bottom',draggable:searchOrigin}).setLngLat([place.coords[1],place.coords[0]]).addTo(map);
+     if(searchOrigin)marker.on('dragend',()=>{const point=marker.getLngLat();pointRef.current?.(point.lat,point.lng);});
+     if(GL.Popup&&!searchOrigin)marker.setPopup(new GL.Popup({offset:24,maxWidth:'300px'}).setDOMContent(
        japan40Popup(place,{
          add:p=>onAddRef.current?.(p),
          chooseDay:p=>onChooseDayRef.current?.(p),
@@ -5590,7 +5592,7 @@ function rhOsmCategory(tags) {
   if(/record shop|disk union|ディスクユニオン|レコード/i.test(name))return 'music';
   if(has('shop',/^(tea)$/)||/(matcha|gyokuro|sencha|hojicha|tea house|teahouse|抹茶|紅茶|茶屋)/i.test(t.name||''))return 'tea';
   if(has('shop',/^(video_games|games|toys|anime|comics)$/)||has('leisure',/^(amusement_arcade)$/)||has('tourism',/^(theme_park)$/))return 'games';
-  if(has('shop',/^(books|bookshop)$/))return 'books';
+  if(has('shop',/^(books|bookshop)$/)||has('amenity',/^library$/))return 'books';
   if(has('shop',/^(music|musical_instrument)$/)||has('amenity',/^(music_venue)$/))return 'music';
   if(has('shop',/^(clothes|boutique)$/)&&(has('clothes',/jeans|denim|vintage/i)||has('second_hand',/yes|only/)))return 'fashion';
   if(has('amenity',/^(planetarium)$/)||/science|astronom|planetari/i.test(t.name||''))return 'science';
@@ -7886,7 +7888,7 @@ function App() {
           R('div',{className:'trip-atlas-panelnote'},'I luoghi con nome riconoscibile sono localizzati automaticamente. Per quelli ambigui, “⌖ Localizza” cerca il punto esatto e chiede conferma solo quando necessario. I pin del catalogo restano indicativi fino a verifica.'));
         const mapview=R('section',{className:'trip-atlas-map-pane '+(atlasMobilePane==='map'?'mobile-visible':'')},
            R('div',{className:'trip-atlas-map-title v35-map-heading'},
-             R('div',null,R('h3',null,'La vostra mappa'),R('p',null,'Tocca i pin per scegliere · zoom e trascinamento liberi')),
+             R('div',null,R('h3',null,'Mappa del Planner'),R('p',null,'Itinerario del giorno e luoghi del catalogo. Tocca un pin per vedere la tappa.')),
              R('button',{type:'button',className:'v35-all-pins',onClick:()=>{
                setAtlasAreaScope('all');setAtlasCategory('all');setAtlasSearch('');setAtlasSelectedId('');
                setAtlasShowAllPins(true);setAtlasMobilePane('map');
@@ -8430,7 +8432,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
         }finally{clearTimeout(timer);}
       };
       try {
-        const interests=rhCategories.filter(c=>['games','tea','books','science','fashion','music','love'].includes(c));
+        const interests=rhCategories.filter(c=>RH_DEFAULT_CATEGORIES.includes(c));
         if(!interests.length){setRhDiscoveryState('ready');setRhStatus('Risultati dal catalogo di viaggio.');return;}
         const body=new URLSearchParams({data:rhOverpassQuery(center.lat,center.lon,Math.min(distanceKm,5)*1000,interests)});
         const data=await request('https://overpass.private.coffee/api/interpreter',{method:'POST',body},16000);
@@ -8603,7 +8605,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
       };
       return R('div',{className:'rh-page'},
         R('section',{className:'rh-hero'},
-          R('div',null,R('h2',null,'Esplora i dintorni'),R('p',null,'Cerca un indirizzo o tocca un punto libero sulla mappa.')),
+          R('div',null,R('h2',null,'Esplora i dintorni'),R('p',null,'Trascina il pin di partenza, tocca la mappa o cerca un indirizzo per vedere i luoghi vicini.')),
           R('button',{type:'button',className:'rh-primary',onClick:rhReadPosition},'◎ Usa il GPS')),
         R('section',{className:'rh-location','aria-label':'Punto di partenza'},
           R('div',{className:'rh-location-manual'},
