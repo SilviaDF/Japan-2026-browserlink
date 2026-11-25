@@ -2850,6 +2850,11 @@ input, textarea, select { max-width:100%; }
 @media(max-width:720px){#root .v71-date-pending{align-items:stretch;padding:12px;}
   #root .v71-date-pending-actions{width:100%;}#root .v71-date-pending-actions button{flex:1 1 150px;}}
 
+
+.start-reservations{grid-template-columns:1fr}
+@media(min-width:900px){.start-reservations{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.start-reservations .fixed-booking-card{grid-template-columns:25px minmax(0,1fr);align-content:start;align-items:start}.start-reservations .fixed-booking-actions{grid-column:2;justify-self:start}}
+ .s96chest{vertical-align:middle;margin-left:5px;padding:8px;border:0;background:transparent;cursor:pointer}.s96chest svg{display:block}
+.secret96{box-sizing:border-box;position:fixed;inset:0;margin:auto;width:min(94vw,430px);max-height:90dvh;overflow:auto;border:3px solid #33283f;border-radius:15px;padding:0;background:#24314a;color:#fce9ca;box-shadow:0 15px 60px #15102677}.secret96::backdrop{background:#132038af}.s96top{display:flex;align-items:center;justify-content:space-between;padding:7px 14px}.s96top small{letter-spacing:.15em;font-weight:bold}.s96top button{font-size:24px;padding:0 8px}.s96paper{background:#fff4de;color:#362b3c;padding:20px;line-height:1.5}.s96paper h2{font:bold 25px Georgia,serif;margin:0 0 12px}.s96paper label{display:block;margin:12px 0;font-weight:700}.s96paper textarea,.s96paper input{display:block;width:100%;margin-top:5px;font:inherit}.s96paper textarea{border:1px solid #bfab98;padding:9px}.s96paper button,.s96return{background:#5d417f;color:white;font-weight:bold;font-size:14px;padding:9px 12px;border-radius:8px;margin:9px 7px 0 0}.s96paper button:disabled{opacity:.5}.s96photo{max-height:39vh;width:100%;object-fit:contain;background:#f1e4cd}.s96note{white-space:pre-wrap;overflow-wrap:anywhere;font:20px/1.5 Georgia,serif;margin:15px 0}.s96scene{height:240px;position:relative;overflow:hidden;background:linear-gradient(#7c719c,#f9b08a 55%,#ffe09a 70%,#6d6782 71%,#a98e87 78%,#cba588 79%)}.s96window{position:absolute;top:12px;left:9%;width:82%;height:62%;border:6px solid #52506b;color:#5a516c;font-size:38px;text-align:right;padding-right:12%;background:linear-gradient(90deg,transparent 48%,#56516d 49% 51%,transparent 52%)}.s96case{position:absolute;bottom:15px;left:9%;width:43%;height:58px;background:#353d61;border:6px solid #292b41;border-radius:10px;box-shadow:inset 8px 0 #bd9467,inset -8px 0 #bd9467}.s96case svg{width:90px;position:absolute;bottom:23px;left:18%}.s96bird{position:absolute;right:7%;bottom:22px;width:29%;padding:0;background:transparent;border:none}.s96env{position:absolute;bottom:60px;left:43%;background:#fff2ce;color:#62404b;border:3px dashed #bf7667;padding:5px;transform:rotate(-8deg);font:italic 16px Georgia,serif}.s96flock{position:absolute;bottom:0;right:0;display:flex;width:70px}.s96flock svg{width:50%}.s96return{position:fixed;bottom:72px;right:12px;z-index:50}
 </style>
 <style>.v73-status{display:block;width:fit-content;font-size:11px;font-weight:800;padding:3px 7px;border-radius:6px;margin:4px 0}.v73-extra{background:#e1f4e7;color:#185b36}.v73-planned{background:#e0edff;color:#174a89}.v73-legend{font-size:12px;margin:8px 0;color:#475569}.zone-nearby-item{grid-template-columns:30px minmax(0,1fr) auto!important}</style><style>
 .trip-atlas-directions:not([open])>*:not(summary){display:none}.trip-atlas-directions summary{display:list-item;cursor:pointer;font-weight:700;padding:.5rem}.trip-atlas-directions[open] a{display:inline-block;margin:.25rem}.day-dining summary,.day-priorities summary{cursor:pointer;font-weight:700;padding:.35rem 0}.day-dining article{margin:.5rem 0}.day-dining a{display:inline-block;margin-right:.6rem}.trip-picks{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,225px),1fr));gap:.8rem;color:#163c45;background:#f4faf7;padding:1rem;border:1px solid #bbd5cf;border-radius:14px}.trip-picks h3{grid-column:1/-1;font-size:1.15rem;font-weight:750}.trip-picks article{background:white;border-radius:8px;padding:.8rem}.trip-picks p{margin:.4rem 0;font-size:.94rem;line-height:1.5}.trip-picks button,.trip-picks a,.day-priorities a,.kit-shortcuts button{color:#12566c;text-decoration:underline;padding:.4rem}.kit-shortcuts{display:flex;gap:.6rem;flex-wrap:wrap}.travel-heading[id]{scroll-margin-top:9rem}#root .v32-planner .near-stop-link{display:block;width:fit-content;min-width:0;min-height:24px;height:auto;padding:2px 4px;margin:1px 0 1px -4px;background:transparent;border:none;box-shadow:none;color:#15546d;font:600 .76rem/1.25 var(--j53-ui);text-decoration:underline;text-underline-offset:3px}.jp23-routebuttons details a{display:inline-block;margin:.3rem}.archive-side summary,.jp23-routebuttons summary{font-weight:700;cursor:pointer;padding:.5rem}
@@ -4180,7 +4185,45 @@ const makeMobileRouteLegs = (stops, travelMode=null, maxStops=5) => {
 
 // Trip Atlas V20: a responsive map-first workspace sharing the Planner's saved routes.
 // Coordinates below are indicative map pins for discovery. Google Maps links resolve exact destinations.
+const TRIP_ADVISOR_STOPS={
+ "Sensoji Asakusa Tokyo": "https://www.tripadvisor.co.uk/Attractions-g298184-Activities-Tokyo_Tokyo_Prefecture_Kanto.html",
+ "Shinjuku Gyoen National Garden": "https://www.tripadvisor.co.uk/Attractions-g298184-Activities-Tokyo_Tokyo_Prefecture_Kanto.html",
+ "Kiyomizu-dera Kyoto": "https://www.tripadvisor.co.uk/Attractions-g298564-Activities-Kyoto_Kyoto_Prefecture_Kinki.html",
+ "Kinkakuji Temple Kyoto": "https://www.tripadvisor.co.uk/Attractions-g298564-Activities-Kyoto_Kyoto_Prefecture_Kinki.html",
+ "Fushimi Inari Taisha Kyoto": "https://www.tripadvisor.co.uk/Attractions-g298564-Activities-Kyoto_Kyoto_Prefecture_Kinki.html",
+ "Osaka Castle": "https://www.tripadvisor.co.uk/Attractions-g298566-Activities-Osaka_Osaka_Prefecture_Kinki.html",
+ "Todaiji Temple Nara": "https://www.tripadvisor.co.uk/Attractions-g298198-Activities-Nara_Nara_Prefecture_Kinki.html",
+ "Nigatsu-do Hall Nara": "https://www.tripadvisor.co.uk/Attractions-g298198-Activities-Nara_Nara_Prefecture_Kinki.html",
+ "Byodoin Temple Uji": "https://www.tripadvisor.co.uk/Attractions-g946495-Activities-Uji_Kyoto_Prefecture_Kinki.html",
+ "Nagoya Castle": "https://www.tripadvisor.co.uk/Attractions-g298106-Activities-Nagoya_Aichi_Prefecture_Tokai_Chubu.html"
+};
+const OPTIONAL_TRIP_STOPS={
+ 16:{"name":"The Tale of Genji Museum Uji","before":"Asagiri Bridge Uji","note":"Museo letterario sui capitoli del Genji ambientati a Uji. Dopo Nintendo e Byōdō-in, sceglietelo come alternativa al laboratorio del tè. Ultimo ingresso 16:30, chiusura 17:00.","url":"https://www.city.uji.kyoto.jp/site/genji/","coords":[34.893889,135.811111]},
+ "7": {
+  "name": "Nagoya Castle",
+  "before": "Osu Kannon Nagoya",
+  "coords": [
+   35.18556,
+   136.89861
+  ],
+  "note": "Se arrivate in mattinata, visitate il palazzo Hommaru dopo il deposito bagagli e prima di Ōsu. Ultimo ingresso al palazzo alle 16:00. La torre principale è chiusa.",
+  "url": "https://www.nagoyajo.city.nagoya.jp/en/information/"
+ },
+ "14": {
+  "name": "Nigatsu-do Hall Nara",
+  "before": "Kasuga Taisha Nara",
+  "coords": [
+   34.689278,
+   135.844278
+  ],
+  "note": "Dopo il Grande Buddha del Tōdai-ji, salite alla terrazza del Nigatsu-dō per la vista su Nara. Poi proseguite verso Kasuga Taisha. La salita comprende scale.",
+  "url": "https://www.todaiji.or.jp/en/information/nigatsudo/"
+ }
+};
 const TRIP_ATLAS_COORDS = {
+ "The Tale of Genji Museum Uji":[34.893889,135.811111],
+"Nagoya Castle":[35.18556,136.89861],
+"Nigatsu-do Hall Nara":[34.689278,135.844278],
  'mother shop shibuya parco 6f tokyo':[35.6621,139.6989],
  'intermediatheque kitte tokyo':[35.6797,139.7649], 'kodai ji kyoto':[35.0008,135.7815], 'sakashitamon gate tokyo':[35.6826,139.7555],
 "madai ramen mengyo honten kinshicho":[35.694235,139.811829],
@@ -4224,6 +4267,9 @@ const TRIP_ATLAS_COORDS = {
 const TRIP_ATLAS_CENTERS = {Tokyo:[35.681,139.76],Nagoya:[35.170,136.900],Kyoto:[35.005,135.768],Osaka:[34.680,135.505],Uji:[34.892,135.802],Nara:[34.686,135.839]};
 // V32: short, practical explanations for the preplanned itinerary; editorial summaries, not verified opening details.
 const V32_STOP_INFO = Object.fromEntries(Object.entries({
+ "The Tale of Genji Museum Uji":"Museo letterario sui capitoli del Genji ambientati a Uji. Dopo Nintendo e Byōdō-in, sceglietelo come alternativa al laboratorio del tè. Ultimo ingresso 16:30, chiusura 17:00.",
+"Nagoya Castle":"Se arrivate in mattinata, visitate il palazzo Hommaru dopo il deposito bagagli e prima di Ōsu. Ultimo ingresso al palazzo alle 16:00. La torre principale è chiusa.",
+"Nigatsu-do Hall Nara":"Dopo il Grande Buddha del Tōdai-ji, salite alla terrazza del Nigatsu-dō per la vista su Nara. Poi proseguite verso Kasuga Taisha. La salita comprende scale.",
  "SQUARE ENIX GARDEN · Shibuya Sakura Stage":"Negozio ufficiale Square Enix, lato SHIBUYA, 3° piano, dove cercare la borsa Cactuar (サボテンダー).",
  "MOTHER Shop Shibuya PARCO 6F Tokyo":"Negozio ufficiale della serie MOTHER / EarthBound. Dal 12 dicembre al 24 gennaio, ore 10:00–21:00. Ingresso libero al 6º piano di Shibuya PARCO.",
  "Kinkakuji Temple Kyoto": "Padiglione d’Oro: una delle visite iconiche di Kyoto, a nord-ovest di Arashiyama (servono mezzi).",
@@ -5031,6 +5077,7 @@ try{writeJapanStore(STORE_PREFIX+id,merged);}
         for(const doc of docs){
             if(g!==generation)return;
             const id=doc.id;
+            if(id==='photo_nrt96sealed')continue;
             if(!(SHARED_KEYS.includes(id)||/^route_(?:[0-9]|1[0-8])$/.test(id)||isPhotoDocId(id)))continue;
             try {
                 const obj=doc.data();
@@ -5284,7 +5331,26 @@ try{writeJapanStore(STORE_PREFIX+id,merged);}
     };
     window.addEventListener('online',()=>{if(ready){emit({stage:'syncing',label:'Connessione ripristinata…'});flushWrites();}else if(stored('invite',''))autoReconnect();});
     window.addEventListener('offline',()=>{if(ready)emit({stage:'offline',label:'Offline · dati locali',detail:'Riconnessione automatica al ritorno di Internet.'});});
-    return {create,join,autoReconnect,updateName,disconnect,importLocalToShared,recoverLocalArchive,downloadBackup,retryPending,refreshNow,clearActivityHistory,
+    const postcardEntry=()=>{
+        if(!ready||!docRef||!cryptKey)throw Error('Viaggio non collegato');
+        return docRef.collection('entries').doc('photo_nrt96sealed');
+    };
+    const readPostcard=async()=>{
+        const g=generation,snap=await postcardEntry().get();
+        if(g!==generation)throw Error('Viaggio cambiato');
+        if(!snap.exists)return null;
+        const data=await decryptValue(snap.data());
+        if(g!==generation)throw Error('Viaggio cambiato');
+        return data.value;
+    };
+    const savePostcard=async(card)=>{
+        if(!card?.note?.trim()||card.note.length>2400||!/^data:image\/jpeg;base64,/.test(card.photo)||card.photo.length>180000)throw Error('Cartolina incompleta');
+        const ref=postcardEntry(),g=generation;
+        const data=await encryptValue({value:{note:card.note,photo:card.photo}});
+        if(g!==generation)throw Error('Viaggio cambiato');
+        await ref.set({...data,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    };
+    return {readPostcard,savePostcard,create,join,autoReconnect,updateName,disconnect,importLocalToShared,recoverLocalArchive,downloadBackup,retryPending,refreshNow,clearActivityHistory,
         restoreBackup,onLocalValue,subscribe:cb=>{callbacks.add(cb);cb({...state});return()=>callbacks.delete(cb);},
         subscribeActivity:cb=>{activityCallbacks.add(cb);cb([...recentActivity]);return()=>activityCallbacks.delete(cb);},
         getRecentActivity:()=>[...recentActivity],
@@ -5628,14 +5694,25 @@ function rhInfrastructure(value) {
  if(/railway museum|railroad museum|stationery|school museum|school of rock/i.test(t))return false;
  return /\b(station|terminal|interchange|expressway|school|university|college|kindergarten|hospital|clinic|office|headquarters|apartment|residence|hotel|police|fire station|post office|railway line)\b|駅$|学校|幼稚園|病院|大学|役所/i.test(t);
 }
+const RH_INTEREST_TERMS={
+  "games": "Nintendo|Pokémon|Pokemon|Zelda|Square Enix|Final Fantasy|Undertale|Omori|Retro Game|ゼルダ|任天堂|ポケモン|スクウェア・エニックス|レトロゲーム",
+  "tea": "gyokuro|hojicha|hōjicha|houjicha|matcha|sencha|玉露|ほうじ茶|焙じ茶|抹茶|煎茶|日本茶",
+  "science": "planetarium|observatory|astronomy|astrophysics|プラネタリウム|天文台|天文学|科学館",
+  "fashion": "denim|jeans|デニム|ジーンズ|児島ジーンズ",
+  "books": "bookstore|bookshop|literary museum|書店|文学館",
+  "music": "record shop|vinyl records|disk union|レコード|ディスクユニオン"
+};
+const RH_INTEREST_PATTERNS=Object.fromEntries(Object.entries(RH_INTEREST_TERMS).map(([key,terms])=>[key,new RegExp(terms,"i")]));
 function rhOsmCategory(tags) {
   const t=tags||{};const has=(key,regex)=>regex.test(String(t[key]||''));
   const name=[t.name,t['name:en'],t.brand].filter(Boolean).join(' ');
   if(has('amenity',/^(school|university|college|kindergarten|hospital|clinic|police|fire_station)$/)||has('railway',/^(station|halt|tram_stop)$/)||has('public_transport',/^(station|platform)$/)||rhInfrastructure(name))return null;
+  for(const [category,pattern] of Object.entries(RH_INTEREST_PATTERNS)){if(pattern.test([name,t['name:ja'],t['brand:en'],t.cuisine,t.museum].filter(Boolean).join(' ')))return category;}
   if(/nintendo|pok[eé]mon|ポケモン|任天堂|square enix|スクウェア|surugaya|駿河屋|super potato|スーパーポテト|mandarake|まんだらけ|animate|アニメイト|retro game/i.test(name))return 'games';
   if(/denim|jeans|デニム|ジーンズ|古着|hinoya|momotaro/i.test(name))return 'fashion';
   if(/science museum|科学館|天文台|プラネタリウム|planetarium|observatory/i.test(name))return 'science';
   if(/record shop|disk union|ディスクユニオン|レコード/i.test(name))return 'music';
+  if(/tea|matcha/i.test(t.cuisine||'')&&t.amenity==='cafe')return 'tea';
   if(has('shop',/^(tea)$/)||/(matcha|gyokuro|sencha|hojicha|tea house|teahouse|抹茶|紅茶|茶屋)/i.test(t.name||''))return 'tea';
   if(has('shop',/^(video_games|games|toys|anime|comics)$/)||has('leisure',/^(amusement_arcade)$/)||has('tourism',/^(theme_park)$/))return 'games';
   if(has('shop',/^(books|bookshop)$/)||has('amenity',/^library$/))return 'books';
@@ -5674,7 +5751,7 @@ function rhOverpassQuery(lat,lon,meters,categories) {
   const filters={
     sight:['["tourism"~"^(attraction|museum|gallery|viewpoint)$"]','["historic"~"^(temple|shrine|castle|monument)$"]'],
     games:['["shop"~"^(video_games|games|anime|comics)$"]','["leisure"="amusement_arcade"]'],
-    tea:['["shop"="tea"]'],
+    tea:['["shop"="tea"]','["amenity"="cafe"]["cuisine"~"tea|matcha",i]'],
     food:['["amenity"~"^(restaurant|cafe)$"]'],
     love:['["tourism"="viewpoint"]'],
     books:['["shop"="books"]','["amenity"="library"]'],
@@ -5684,10 +5761,29 @@ function rhOverpassQuery(lat,lon,meters,categories) {
     nature:['["leisure"~"^(park|garden)$"]']
   };
   const targeted={games:['["name"~"Nintendo|Pokémon|Pokemon|ポケモン|任天堂|Square Enix|駿河屋|まんだらけ|アニメイト|スーパーポテト",i]'],tea:['["name"~"抹茶|茶舗|茶屋|gyokuro|hojicha|matcha|tea house",i]'],fashion:['["name"~"denim|jeans|デニム|ジーンズ|古着",i]','["shop"="clothes"]["second_hand"~"yes|only"]'],science:['["name"~"科学館|天文台|プラネタリウム|science museum|observatory|planetarium",i]'],music:['["name"~"レコード|ディスクユニオン|record shop|disk union",i]'],sight:['["building"~"^(temple|shrine)$"]']};
-  const clauses=[...new Set(categories.flatMap(c=>[...(targeted[c]||[]),...(filters[c]||[])]))].map(f=>`nwr${f}["name"]${around};`);
+  const special=c=>RH_INTEREST_TERMS[c]?['[~"^(name|name:en|name:ja|brand|brand:en)$"~"'+RH_INTEREST_TERMS[c]+'",i]']:[];
+  const clauses=[...new Set(categories.flatMap(c=>[...special(c),...(targeted[c]||[]),...(filters[c]||[])]))].map(f=>`nwr${f}["name"]${around};`);
   return '[out:json][timeout:20];('+clauses.join('')+');out center 500;';
 }
 
+const RH_WIKI_LANDMARKS={
+ 'Category:World Heritage Sites in Japan':['sight','Sito del Patrimonio mondiale UNESCO'],
+ 'Category:National museums of Japan':['sight','Museo nazionale del Giappone'],
+ 'Category:National parks of Japan':['nature','Parco nazionale del Giappone'],
+ 'Category:Special Places of Scenic Beauty':['nature','Luogo paesaggistico di speciale interesse']
+};
+function rhWikiPlace(page){
+ const title=String(page.title||''),desc=String(page.description||''),point=page.coordinates?.[0];
+ if(!title||!point||![point.lat,point.lon].every(Number.isFinite)||!rhWithinJapan(point.lat,point.lon)||rhInfrastructure(title))return null;
+ const subject=title+' '+desc;
+ if(/\b(station|stations|railway line|railroad line|junction|terminal|bus stop|tram stop|interchange|campus|university|school|district|neighbourhood|neighborhood|municipality|ward|company|battle|plaque|marker|list of|disambiguation)\b|駅|停留場/i.test(subject))return null;
+ if(/^(former|defunct|demolished|destroyed|proposed|closed)\b/i.test(desc))return null;
+ const designation=(page.categories||[]).map(c=>RH_WIKI_LANDMARKS[c.title]).find(Boolean);
+ if(!designation)return null;
+ let [category,info]=designation;
+ if(category==='sight'&&/science museum|museum of science|planetarium|observatory/i.test(subject))category='science';
+ return {id:'wiki_'+page.pageid,title,query:title,category,info:info+'.',source:'wikipedia',osm:true,coords:[point.lat,point.lon],city:'Giappone',url:'https://en.wikipedia.org/?curid='+page.pageid};
+}
 function rhWithinJapan(lat,lon) { return Number(lat)>=24&&Number(lat)<=46&&Number(lon)>=122&&Number(lon)<=154; }
 function rhReadableDescription(raw) {
   const text=String(raw||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
@@ -6144,8 +6240,8 @@ function rhDiscoveryErrorMessage(error) {
         "city": "Tokyo",
         "hotel": "Tokyo · hotel notte 17 da confermare",
         "title": "Osaka → Tokyo · Museo Ghibli e MOTHER a Shibuya",
-        "transit": "Con ingresso Ghibli previsto verso le 15:00, partite da Shin-Osaka la mattina (idealmente entro le 08:00), raggiungete Tokyo in Shinkansen e poi Mitaka. Programmate un ampio margine per i trasferimenti e il deposito bagagli: l’orario esatto sul biglietto prevale su questa stima. Hotel a Tokyo per il 17 notte da confermare. Dopo il museo raggiungete Kichijōji e prendete la linea Keiō Inokashira diretta a Shibuya. Dal capolinea proseguite a piedi fino al PARCO.",
-        "walkRoute": "Mattina Shin-Osaka → Tokyo/Shinagawa → Mitaka → pranzo e Inokashira Park → ~15:00 Museo Ghibli → Kichijōji → Shibuya PARCO, MOTHER al 6º piano → cena",
+        "transit": "Per la visita al Ghibli, partite da Shin-Osaka la mattina (idealmente entro le 08:00), raggiungete Tokyo in Shinkansen e poi Mitaka. Programmate un ampio margine per i trasferimenti e il deposito bagagli: l’orario esatto sul biglietto prevale su questa stima. Dopo il museo raggiungete Kichijōji e prendete la linea Keiō Inokashira diretta a Shibuya. Dal capolinea proseguite a piedi fino al PARCO.",
+        "walkRoute": "Mattina Shin-Osaka → Tokyo/Shinagawa → Mitaka → pranzo e Inokashira Park → Museo Ghibli all’orario del biglietto → Kichijōji → Shibuya PARCO, MOTHER al 6º piano → cena",
         "stops": [
             "Shin-Osaka Station",
             "Inokashira Park Tokyo",
@@ -6156,14 +6252,14 @@ function rhDiscoveryErrorMessage(error) {
         "highlights": [
             "🚅 Mattina: Shin-Osaka → Tokyo → Mitaka. Lasciate le valigie in hotel o in stazione prima di Mitaka: gli armadietti del museo sono per borse piccole.",
             "🌳 Se arrivate in tempo, pranzo e passeggiata al parco Inokashira PRIMA dell’ingresso: a dicembre fa buio presto.",
-            "🎟️ CIRCA 15:00: Museo Ghibli a Mitaka. Verificate lo slot preciso stampato sul biglietto e arrivate con anticipo.",
-            "🏨 Hotel a Tokyo per la notte del 17 dicembre ancora da confermare.",
+            "🎟️ Museo Ghibli a Mitaka. Verificate lo slot preciso stampato sul biglietto e arrivate con anticipo.",
+            "🏨 Annotate hotel e deposito bagagli nella scheda del 17 dicembre.",
             "💗 WOW gratis: Inokashira Park e il lago sono già nel programma prima del Ghibli Museum; la sosta al caffè è facoltativa e a pagamento.",
             "🎮 Sera · MOTHERのおみせ。al 6º piano di Shibuya PARCO. Puntate alle 18:30–19:30, prima della cena."
         ],
         "mustSee": "Ghibli Museum prenotato",
         "forUs": "Animazione, librerie e passeggiata romantica",
-        "flexNote": "Museo verso le 15:00: il biglietto decide lo slot esatto. Concedetevi soltanto un’attività breve prima dell’ingresso; hotel Tokyo ancora da confermare."
+        "flexNote": "Verificate lo slot Ghibli sul biglietto. Concedetevi soltanto un’attività breve prima dell’ingresso."
     },
     {
         "day": "Day 19",
@@ -6187,6 +6283,48 @@ function rhDiscoveryErrorMessage(error) {
         "flexNote": "Scegliete prima un treno per il terminal corretto. Maruzen e Character Street sono le soste da accorciare se occorre recuperare le valigie."
     }
 ];
+
+function ChestIcon(){
+ const R=React.createElement;
+ return R('svg',{viewBox:'0 0 20 16',width:24,height:20,'aria-hidden':true,shapeRendering:'crispEdges'},
+ R('path',{fill:'#332432',d:'M2 3h2V1h12v2h2v2h1v10H1V5h1z'}),
+ R('path',{fill:'#965229',d:'M3 5h1V3h12v2h1v2H3zm0 4h14v4H3z'}),
+ R('path',{fill:'#ffc955',d:'M4 3h2v4H4zm10 0h2v4h-2zM3 8h14v1H3zm1 1h2v4H4zm10 0h2v4h-2zM8 7h4v4H8z'}),
+ R('path',{fill:'#37243a',d:'M9 8h2v2H9z'}));
+}
+function SecretSprite({bird=false}){
+ const rows=bird?['...........rr.r..','..........rrrrr..','.........wwwrr...','..b.....wwwwkk.y.','..bb...wwwwwkkyyy','.bbwwwwwwwwww.y..','.bwwwwwwwwwww....','..wwwwwccwwww....','...wwwwcccww.....','....wwwwwww......','......y..y.......','.....yy..yy......']:['.....d.d.......','....dgggd......','...dgggggd.....','...dgkgkgd.....','...dggkggd..dd.','.dddgkkkgd.dggd','dggdgggggd.dggd','dggggggggddgggd','.dddgggggggggd.','...dgggggdddd..','...dgggggd.....','..dgggggggd....','.dggdddddggd...','dggd.....dggd..','.dd.......dd...'];
+ const palette={r:'#c94745',w:'#fff5d4',b:'#5266a7',c:'#ddcbb5',k:'#302539',y:'#eba238',d:'#376047',g:'#90c744'};
+ return React.createElement('svg',{viewBox:'0 0 18 16',shapeRendering:'crispEdges','aria-hidden':true},rows.flatMap((row,y)=>Array.from(row,(p,x)=>p==='.'?null:React.createElement('rect',{key:y+'-'+x,x,y,width:1,height:1,fill:palette[p]}))));
+}
+function Postcard96({editor=false,close,connect,connected}){
+ const R=React.createElement;
+ const [photo,pic]=React.useState(''),[note,write]=React.useState(''),[page,go]=React.useState(editor?'edit':'scene'),[busy,work]=React.useState(false),[msg,say]=React.useState(''),[loaded,ready]=React.useState(false),[attempt,retry]=React.useState(0),[chickens,peck]=React.useState(0);
+ const dialog=React.useRef(null);
+ React.useEffect(()=>{const prev=document.activeElement;const d=dialog.current;if(d&&!d.open)d.showModal();return()=>{d?.close();prev?.focus?.();};},[]);
+ React.useEffect(()=>{let live=true;ready(false);if(!connected)return;
+   Japan22Cloud.readPostcard().then(card=>{if(live){pic(card?.photo||'');write(card?.note||'');ready(true);say('');}}).catch(()=>{if(live)say('Cartolina non caricata. Controlla la connessione e riprova.');});
+   return()=>{live=false;};
+ },[connected,attempt]);
+ async function choosePhoto(e){
+  const file=e.target.files?.[0];if(!file)return;work(true);say('');
+  const url=URL.createObjectURL(file);
+  try{const img=new Image();img.src=url;await img.decode();const canvas=document.createElement('canvas');
+    for(const edge of [1000,800,600,420]){const ratio=Math.min(1,edge/Math.max(img.width,img.height));canvas.width=Math.max(1,Math.round(img.width*ratio));canvas.height=Math.max(1,Math.round(img.height*ratio));const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);const jpeg=canvas.toDataURL('image/jpeg',.74);if(jpeg.length<=180000){pic(jpeg);return;}}
+    throw Error();
+  }catch{say('Scegli una foto JPG o PNG leggibile dal telefono.');}finally{URL.revokeObjectURL(url);work(false);e.target.value='';}
+ }
+ async function save(){work(true);say('Invio in corso…');try{await Japan22Cloud.savePostcard({photo,note:note.trim()});say('Cartolina salvata nel viaggio condiviso. Puoi modificarla da questo link.');}catch{say('Invio non riuscito. La foto e il testo sono ancora qui: riprova.');}finally{work(false);}}
+ const back=()=>editor?go('edit'):close();
+ return R('dialog',{ref:dialog,className:'secret96',onCancel:e=>{e.preventDefault();if(!busy)close();},'aria-label':editor?'Prepara la cartolina':'Una sorpresa per Ugo'},
+ R('div',{className:'s96top'},R('small',null,'18 DICEMBRE · NARITA'),R('button',{onClick:close,disabled:busy,'aria-label':'Chiudi'},'×')),
+ !connected?R('div',{className:'s96paper'},R('p',null,'Collega questo telefono al vostro viaggio per aprire la cartolina.'),R('button',{onClick:connect},'Apri sincronizzazione')):
+ !loaded?R('div',{className:'s96paper'},R('p',{role:'status'},msg||'Apro il viaggio…'),msg&&R('button',{onClick:()=>retry(n=>n+1)},'Riprova')):
+ page==='edit'?R('div',{className:'s96paper'},R('h2',null,'Una cartolina per Ugo'),R('label',null,'La tua foto',R('input',{type:'file',accept:'image/*',disabled:busy,onChange:choosePhoto})),photo&&R('img',{className:'s96photo',src:photo,alt:'Foto scelta per la cartolina'}),R('label',null,'La tua dedica',R('textarea',{value:note,onChange:e=>write(e.target.value),maxLength:2400,rows:4,disabled:busy})),R('button',{disabled:busy||!photo||!note.trim(),onClick:()=>{go('scene');peck(0);}},'Anteprima'),R('button',{disabled:busy||!photo||!note.trim(),onClick:save},'Salva per il 18 dicembre'),R('p',{role:'status'},msg)):
+ page==='scene'?R('div',null,R('div',{className:'s96scene'},R('div',{className:'s96window','aria-hidden':true},'✈'),R('div',{className:'s96case'},R(SecretSprite)),R('div',{className:'s96env'},'Per Ugo'),R('button',{className:'s96bird','aria-label':'Tocca il Cucco',onClick:()=>peck(n=>n+1)},R(SecretSprite,{bird:true})),chickens>=3&&R('div',{className:'s96flock'},R(SecretSprite,{bird:true}),R(SecretSprite,{bird:true}))),R('div',{className:'s96paper'},R('p',null,'Il Cucco ha trovato qualcosa nella valigia…'),R('button',{onClick:()=>go('letter')},'Apri la busta'),editor&&R('button',{onClick:back},'Modifica'))):
+ R('div',{className:'s96paper'},R('h2',null,'Per Ugo'),photo&&R('img',{className:'s96photo',src:photo,alt:'La foto scelta da Silvia'}),R('p',{className:'s96note'},note||'La busta è ancora vuota.'),R('button',{onClick:editor?back:close},editor?'Torna alla modifica':'Chiudi la cartolina')));
+}
+
 
 function App() {
     // Default theme is Authentic Wind Waker Great Sea Blue ('windwaker') or 'pokemon'
@@ -6263,6 +6401,18 @@ function App() {
     const [online, setOnline] = React.useState(navigator.onLine);
     const [toastMsg, setToastMsg] = React.useState(null);
     const [cloudPanelOpen, setCloudPanelOpen] = React.useState(false);
+    const [postcardMode,setPostcardMode]=React.useState('');
+    const [editorAccess,setEditorAccess]=React.useState(false);
+    React.useEffect(()=>{
+      let sequence=0;
+      const check=async()=>{const n=++sequence;const token=new URLSearchParams(window.location.hash.slice(1)).get('prepara');
+        setEditorAccess(false);setPostcardMode('');
+        if(!token||!/^[a-f0-9]{48}$/.test(token))return;
+        const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token));
+        if(n===sequence&&Array.from(new Uint8Array(hash),x=>x.toString(16).padStart(2,'0')).join('')==='b33c7d931017ced9ba0aefef1eb4342f23308a8a7446d97cb304682746ad69e7'){setEditorAccess(true);setPostcardMode('editor');}
+      };
+      check();window.addEventListener('hashchange',check);return()=>{sequence++;window.removeEventListener('hashchange',check);};
+    },[]);
     const [cloudInfo, setCloudInfo] = React.useState(() => Japan22Cloud.getInfo());
     React.useEffect(() => { writeJapanStore('japan2026:fixedEventTimes', fixedEventTimes); }, [fixedEventTimes]);
     React.useEffect(() => {
@@ -6393,6 +6543,7 @@ function App() {
     const rhRequestController=React.useRef(null);
     
     const rhGeneration=React.useRef(0);
+    const [rhWiki,setRhWiki]=React.useState(null);
     const [rhMapPlaces,setRhMapPlaces]=React.useState([]);
     const [rhExternal,setRhExternal]=React.useState([]);
     const [rhBusy,setRhBusy]=React.useState(false);
@@ -6401,7 +6552,18 @@ function App() {
     const [minutesAvailable,setMinutesAvailable]=React.useState(0);
     const includeSeasonal=rhCategories.includes('seasonal');
     const [bagNote,setBagNote]=React.useState(()=>readJapanStore('japan2026:bagNote',''));
-    const bagField=()=>React.createElement('label',{className:'bag-note'},'Hotel o deposito bagagli a Tokyo',React.createElement('input',{value:bagNote,placeholder:'Nome o indirizzo',onChange:e=>{setBagNote(e.target.value);writeJapanStore('japan2026:bagNote',e.target.value);}}));
+    const [tokyoHotel,setTokyoHotel]=React.useState(()=>readJapanStore('japan2026:tokyoHotel17',''));
+    const ghibliTime=fixedEventTimes.fixed_ghibli||'15:00';
+    const checkedTime=fixedEventTimes.ghibliTicketChecked===ghibliTime;
+    const ghibliLabel=checkedTime?ghibliTime+' · orario sul biglietto':'circa '+ghibliTime+' · da verificare sul biglietto';
+    const bagField=()=>React.createElement('label',{className:'bag-note'},'Dove lasciare le valigie prima di Mitaka',React.createElement('input',{value:bagNote,placeholder:'Nome o indirizzo',onChange:e=>{setBagNote(e.target.value);writeJapanStore('japan2026:bagNote',e.target.value);}}));
+    const tokyoLogistics=()=>React.createElement('section',{className:'trip-atlas-booking'},
+      React.createElement('b',null,'17 dicembre · Arrivo a Tokyo'),
+      React.createElement('label',{className:'bag-note'},'Hotel per la notte del 17',React.createElement('input',{value:tokyoHotel,placeholder:'Nome o indirizzo dell’hotel',onChange:e=>{setTokyoHotel(e.target.value);writeJapanStore('japan2026:tokyoHotel17',e.target.value);}})),
+      bagField(),
+      React.createElement('label',{className:'bag-note'},'Ingresso al Museo Ghibli',React.createElement('input',{type:'time',value:ghibliTime,onChange:e=>{const time=e.target.value;if(time)setFixedEventTimes(prev=>({...prev,fixed_ghibli:time,ghibliTicketChecked:''}));}})),
+      React.createElement('label',null,React.createElement('input',{type:'checkbox',checked:checkedTime,onChange:e=>{const checked=e.target.checked;setFixedEventTimes(prev=>({...prev,ghibliTicketChecked:checked?ghibliTime:''}));}}),' Ho verificato l’orario sul biglietto'));
+
     const [rhShowMap,setRhShowMap]=React.useState(true);
     const [rhMapFocusStamp,setRhMapFocusStamp]=React.useState(0);
     const [rhCenterRequest,setRhCenterRequest]=React.useState(null);
@@ -7651,21 +7813,7 @@ function App() {
                         React.createElement("p", { className: "text-xs text-slate-700 mt-3 leading-relaxed" }, h.station),
                         React.createElement("p", { className: "text-[11px] text-slate-500 mt-2 leading-relaxed" }, h.notes),
                         React.createElement("div", { className: "flex flex-wrap gap-2 mt-3" },
-                            React.createElement("a", { href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.mapQuery)}`, target: "_blank", rel: "noreferrer", className: "tea-guide-button" }, "↗ Maps")))))),
-                React.createElement("section", { className: "ww-card bg-white p-4 md:p-5" },
-                    React.createElement("div", { className: "travel-kicker" }, "Date già fissate"),
-                    React.createElement("h3", { className: "travel-heading mt-1" }, "🎟️ Prenotazioni importanti"),
-                    React.createElement("p", { className: "text-xs text-slate-500 mt-1 mb-3 leading-relaxed" }, "Tre appuntamenti già prenotati: teamLab a Kyoto, il Nintendo Museum a Uji e il Museo Ghibli a Mitaka. Sono i punti fermi intorno a cui organizzare le giornate."),
-                    React.createElement("div", { className: "fixed-bookings-grid" }, fixedEvents.map(ev => React.createElement("article", { key: ev.id, className: "fixed-booking-card" },
-                        React.createElement("span", { className: "fixed-booking-emoji" }, ev.emoji),
-                        React.createElement("div", { className: "fixed-booking-copy" },
-                            React.createElement("span", { className: "fixed-booking-date" }, ev.date),
-                            React.createElement("strong", null, ev.title),
-                            React.createElement("span", { className: "fixed-booking-time" }, ev.id==='fixed_teamlab' ? ev.time : (fixedEventTimes[ev.id] || DEFAULT_FIXED_EVENT_TIMES[ev.id] || '') + (ev.id==='fixed_ghibli' ? ' circa · verificare il biglietto' : ' · ingresso prenotato')),
-                            React.createElement("span", { className: "fixed-booking-summary" }, ({ fixed_teamlab: 'Arte digitale immersiva a Kyoto.', fixed_nintendo: 'Museo interattivo Nintendo nella zona di Ogura.', fixed_ghibli: 'Un viaggio nello Studio Ghibli a Mitaka.' })[ev.id] || 'Tappa prenotata.')),
-                        React.createElement("div", { className: "fixed-booking-actions" },
-                            starButton(ev,{category:'Prenotazione'},'favorite-star favorite-star-small'),
-                            React.createElement("a", { href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.mapQuery)}`, target: "_blank", rel: "noopener noreferrer", className: "fixed-booking-map j51-fixed-map-icon", title: "Apri su Google Maps", "aria-label":"Apri "+ev.title+" su Google Maps" }, '↗'))))))),
+                            React.createElement("a", { href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.mapQuery)}`, target: "_blank", rel: "noreferrer", className: "tea-guide-button" }, "↗ Maps"))))))),
 
             React.createElement("div", { className: "space-y-4" },
                 React.createElement("div", { ref: introMapRef },
@@ -7677,7 +7825,21 @@ function App() {
                     React.createElement("p", { className: "text-sm text-slate-700 mt-3 leading-relaxed" }, selectedHotelCard.station),
                     React.createElement("p", { className: "text-xs text-slate-600 mt-2 leading-relaxed" }, selectedHotelCard.notes),
                     React.createElement("div", { className: "flex flex-wrap gap-2 mt-3" },
-                        React.createElement("a", { href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedHotelCard.mapQuery)}`, target: "_blank", rel: "noreferrer", className: "travel-action secondary" }, "↗ Maps"))))));
+                        React.createElement("a", { href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedHotelCard.mapQuery)}`, target: "_blank", rel: "noreferrer", className: "travel-action secondary" }, "↗ Maps"))))),
+        React.createElement("section", { className: "ww-card bg-white p-4 md:p-5" },
+                    React.createElement("div", { className: "travel-kicker" }, "Date già fissate"),
+                    React.createElement("h3", { className: "travel-heading mt-1" }, "🎟️ Prenotazioni importanti"),
+                    React.createElement("p", { className: "text-xs text-slate-500 mt-1 mb-3 leading-relaxed" }, "Tre appuntamenti già prenotati: teamLab a Kyoto, il Nintendo Museum a Uji e il Museo Ghibli a Mitaka. Sono i punti fermi intorno a cui organizzare le giornate."),
+                    React.createElement("div", { className: "fixed-bookings-grid start-reservations" }, fixedEvents.map(ev => React.createElement("article", { key: ev.id, className: "fixed-booking-card" },
+                        React.createElement("span", { className: "fixed-booking-emoji" }, ev.emoji),
+                        React.createElement("div", { className: "fixed-booking-copy" },
+                            React.createElement("span", { className: "fixed-booking-date" }, ev.date),
+                            React.createElement("strong", null, ev.title),
+                            React.createElement("span", { className: "fixed-booking-time" }, ev.id==='fixed_ghibli'?ghibliLabel:ev.id==='fixed_teamlab' ? ev.time : (fixedEventTimes[ev.id] || DEFAULT_FIXED_EVENT_TIMES[ev.id] || '') + (ev.id==='fixed_ghibli' ? ' circa · verificare il biglietto' : ' · ingresso prenotato')),
+                            React.createElement("span", { className: "fixed-booking-summary" }, ({ fixed_teamlab: 'Arte digitale immersiva a Kyoto.', fixed_nintendo: 'Museo interattivo Nintendo nella zona di Ogura.', fixed_ghibli: 'Un viaggio nello Studio Ghibli a Mitaka.' })[ev.id] || 'Tappa prenotata.')),
+                        React.createElement("div", { className: "fixed-booking-actions" },
+                            starButton(ev,{category:'Prenotazione'},'favorite-star favorite-star-small'),
+                            React.createElement("a", { href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.mapQuery)}`, target: "_blank", rel: "noopener noreferrer", className: "fixed-booking-map j51-fixed-map-icon", title: "Apri su Google Maps", "aria-label":"Apri "+ev.title+" su Google Maps" }, '↗')))))));
     // Four routes per day, based on the existing program and nearby curated neighborhoods.
     const getSavedDayStops = (idx,routes=customDayRoutes) => {
         const base=dailyItinerary[idx]?.stops||[];
@@ -7951,10 +8113,19 @@ function App() {
             R('div',{className:'trip-atlas-focus-actions'},
              R('button',{className:'j45-quest-btn',onClick:()=>openDayPicker(selected)},questLabel(selected)),
              R('a',{href:j45GoogleMapsLink(selected),className:'j45-maps-link j52-compact-maps',target:'_blank',rel:'noopener noreferrer',title:'Apri su Google Maps','aria-label':'Apri '+selected.title+' su Google Maps'},'↗'))));
+        const suggestion=OPTIONAL_TRIP_STOPS[idx];
+        const addSuggestion=()=>{
+          const stops=getSavedDayStops(idx);
+          if(!suggestion||stops.includes(suggestion.name)||stops.length>=20)return;
+          const position=stops.indexOf(suggestion.before);
+          stops.splice(position<0?stops.length:position,0,suggestion.name);
+          setDayStops(idx,stops);showToast('Tappa aggiunta al Day '+(idx+1));
+        };
         const right=R('aside',{className:'trip-atlas-itinerary '+(atlasMobilePane==='plan'?'mobile-visible':'')},
          R('div',{className:'trip-atlas-panelhead'},R('div',null,R('h3',null,'🗓️ La giornata'),R('p',null,'Day '+(idx+1)+' · '+day.date)),R('span',{className:'trip-atlas-count'},dayStops.length+' tappe')),
-         booking&&R('div',{className:'trip-atlas-booking'},R('b',null,'🎟️ Prenotazione confermata'),R('span',null,booking),R('small',null,idx===9?'9 dicembre · ingresso 16:00–16:30':idx===16?'16 dicembre · '+(fixedEventTimes.fixed_nintendo||'10:00'):'17 dicembre · circa '+(fixedEventTimes.fixed_ghibli||'15:00')+', verifica il biglietto')),
-         booking&&R('details',{className:'booking-access'},R('summary',null,'Ingresso e biglietto'),...BOOKING_ACCESS[idx].map(t=>R('p',{key:t},t)),idx===17&&bagField()),
+         booking&&R('div',{className:'trip-atlas-booking'},R('b',null,'🎟️ Prenotazione confermata'),R('span',null,booking),R('small',null,idx===9?'9 dicembre · ingresso 16:00–16:30':idx===16?'16 dicembre · '+(fixedEventTimes.fixed_nintendo||'10:00'):'17 dicembre · '+ghibliLabel)),
+         booking&&R('details',{className:'booking-access'},R('summary',null,'Ingresso e biglietto'),...BOOKING_ACCESS[idx].map(t=>R('p',{key:t},t)),false),
+         idx===17&&tokyoLogistics(),
          R('div',{className:'trip-atlas-stops'},dayStops.length?dayStops.map((stop,i)=>{
            const isFixed=isFixedStop(stop);
            return R('div',{key:i,className:'trip-atlas-stop'},
@@ -7964,6 +8135,7 @@ function App() {
                  const [lat,lon]=coordsForStop(stop);rhChooseLocation({lat,lon,label:stop});navigateToTab('rightnow');
                }},'Esplora'),
                R('small',{className:'v31-stop-description'},V32_STOP_INFO[atlasKey(stop)] || ((builder.find(p=>p.key===atlasKey(stop))||{}).info || 'Tappa del viaggio: apri la mappa per dettagli e dintorni')),
+               TRIP_ADVISOR_STOPS[stop]&&R('a',{className:'near-stop-link',href:TRIP_ADVISOR_STOPS[stop],target:'_blank',rel:'noopener noreferrer'},'Tra le attrazioni di Tripadvisor ↗'),
                isFixed&&R('span',{className:'trip-atlas-locked'},'🔒 Orario fisso'),
                !atlasGeocodes[atlasKey(stop)]&&!atlasCoordinates(stop)&&R('button',{className:'v31-pin-find',disabled:geoBusy,onClick:()=>searchAtlasLocation({query:stop,city:dayCity})},'⌖ Trova pin')),
              R('div',{className:'trip-atlas-stop-actions'},
@@ -7972,6 +8144,7 @@ function App() {
                R('a',{href:atlasSearchLink(stop),target:'_blank',rel:'noopener noreferrer','aria-label':'Apri '+stop+' in Google Maps',title:'Apri su Google Maps',className:'j52-compact-maps'},'↗'),
                R('button',{onClick:()=>removeDayStop(idx,i),disabled:isFixed,'aria-label':'Remove from Quest: '+stop,title:'Remove from Quest',className:'trip-atlas-delete'},'×')));
          }):R('p',{className:'trip-atlas-empty'},'Nessuna tappa. Aggiungine una dal catalogo.')),
+         suggestion&&!dayStops.includes(suggestion.name)&&R('div',{className:'trip-atlas-booking'},R('small',null,'Visita facoltativa'),R('b',null,suggestion.name),R('p',null,suggestion.note),R('div',null,TRIP_ADVISOR_STOPS[suggestion.name]&&R('a',{className:'near-stop-link',href:TRIP_ADVISOR_STOPS[suggestion.name],target:'_blank',rel:'noopener noreferrer'},'Tripadvisor ↗'),TRIP_ADVISOR_STOPS[suggestion.name]&&' · ',R('a',{className:'near-stop-link',href:suggestion.url,target:'_blank',rel:'noopener noreferrer'},'Sito ufficiale ↗')),R('button',{type:'button',className:'j45-quest-btn',disabled:dayStops.length>=20,onClick:addSuggestion},'+ Aggiungi a questa giornata')),
          R(DailyMapsLink,{stops:dayStops}),
          R('form',{className:'trip-atlas-add-form',onSubmit:onAddCustom},R('input',{value:atlasAddText,onChange:e=>setAtlasAddText(e.target.value),placeholder:'Aggiungi luogo o indirizzo…','aria-label':'Nuova tappa'}),R('button',{type:'submit'},'＋')),
          R('div',{className:'trip-atlas-right-foot'},R('button',{onClick:resetCurrent},'↺ Ripristina giornata'),R('span',{className:'v31-day-count'},cloudInfo.connected?'☁️ Sync collegata':'💾 Salvato qui · Sync non collegata')),
@@ -8355,7 +8528,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
                         R('span',{className:'today-tiny'},hotel.station),
                         R('a',{href:maps(hotel.mapQuery),target:'_blank',rel:'noreferrer',className:'today-mini-link'},'↗ Maps'))
                     : R(React.Fragment,null,
-                        R('p',null,idx===17?'Rientro a Tokyo · pernottamento non specificato':idx===18?'Giornata di partenza':day.hotel),
+                        R('p',null,idx===17?(tokyoHotel||'Hotel del 17 da confermare'):idx===18?'Giornata di partenza':day.hotel),
                         R('span',{className:'today-tiny'},idx===17?'Nessun hotel a Tokyo indicato per la notte del 17 dicembre.':'Usa il percorso del giorno per organizzare gli spostamenti.'))),
                 R('article',{className:'today-kpi today-kpi-transport'},
                     R('span',{className:'today-overline'},'🚉 Trasporti'),
@@ -8371,15 +8544,15 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
                     R('span',{className:'today-booking-icon'},flight.icon),
                     R('div',{className:'today-booking-info'},
                         R('strong',null,`${flight.type} · ${flight.airport}`),
-                        R('span',null,'Orario '+flight.time+' · ora locale giapponese')),
+                        R('span',null,'Orario '+flight.time+' · ora locale giapponese',idx===18&&japanNowDate==='2026-12-18'&&R('button',{className:'s96chest',type:'button','aria-label':'Apri lo scrigno',onClick:()=>setPostcardMode('reveal')},R(ChestIcon)))),
                     R('a',{href:maps(flight.mapQuery),target:'_blank',rel:'noreferrer',className:'today-mini-link'},'↗ Maps')),
                 event && R('div',{className:'today-booking'},
                     R('span',{className:'today-booking-icon'},event.emoji),
                     R('div',{className:'today-booking-info'},
                         R('strong',null,event.title),
-                        R('span',null,event.id==='fixed_teamlab' ? '16:00–16:30 · fascia d’ingresso' : (fixedEventTimes[event.id] || DEFAULT_FIXED_EVENT_TIMES[event.id]) ? 'Ingresso: '+(fixedEventTimes[event.id] || DEFAULT_FIXED_EVENT_TIMES[event.id])+(event.id==='fixed_ghibli'?' circa · confermare sul biglietto':'') : 'Orario non indicato: consulta il biglietto'),
-                        R('details',{className:'booking-access'},R('summary',null,'Ingresso e biglietto'),...BOOKING_ACCESS[idx].map(t=>R('p',{key:t},t)),idx===17&&bagField()),
-                        event.id!=='fixed_teamlab' && R('label',{className:'today-event-time'},
+                        R('span',null,event.id==='fixed_ghibli' ? ghibliLabel : event.id==='fixed_teamlab' ? '16:00–16:30 · fascia d’ingresso' : (fixedEventTimes[event.id] || DEFAULT_FIXED_EVENT_TIMES[event.id]) ? 'Ingresso: '+(fixedEventTimes[event.id] || DEFAULT_FIXED_EVENT_TIMES[event.id])+(event.id==='fixed_ghibli'?' circa · confermare sul biglietto':'') : 'Orario non indicato: consulta il biglietto'),
+                        R('details',{className:'booking-access'},R('summary',null,'Ingresso e biglietto'),...BOOKING_ACCESS[idx].map(t=>R('p',{key:t},t)),idx===17&&tokyoLogistics()),
+                        event.id==='fixed_nintendo' && R('label',{className:'today-event-time'},
                             event.id==='fixed_ghibli' ? 'Orario previsto (circa) ' : 'Orario prenotato ',
                             R('input',{type:'time',value:fixedEventTimes[event.id]||DEFAULT_FIXED_EVENT_TIMES[event.id]||'',onChange:e=>setFixedEventTimes(prev=>({...prev,[event.id]:e.target.value})), 'aria-label':'Orario '+event.title}))),
                     R('a',{href:maps(event.mapQuery),target:'_blank',rel:'noreferrer',className:'today-mini-link'},'↗ Maps'))),
@@ -8567,6 +8740,23 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
       window.setTimeout(()=>rhMapPanelRef.current?.scrollIntoView?.({behavior:'smooth',block:'center'}),75);
     };
     const now=rhLocationMode==='manual'?rhManualLocation:rhPosition;
+    const wikiKey=activeTab==='rightnow'&&now&&rhCategories.some(c=>['science','nature','sight'].includes(c))?[now.lat,now.lon,rhRadius].join('|'):'';
+    React.useEffect(()=>{
+      if(!wikiKey)return;
+      const controller=new AbortController();
+      const timeout=setTimeout(()=>controller.abort(),12500);
+      const timer=setTimeout(async()=>{
+        const [lat,lon,km]=wikiKey.split('|');
+        const params=new URLSearchParams({action:'query',format:'json',formatversion:'2',origin:'*',generator:'geosearch',ggscoord:lat+'|'+lon,ggsradius:String(Math.min(10000,Number(km)*1000)),ggslimit:'50',prop:'coordinates|description|categories',clcategories:Object.keys(RH_WIKI_LANDMARKS).join('|'),cllimit:'max'});
+        try{
+          const res=await fetch('https://en.wikipedia.org/w/api.php?'+params,{signal:controller.signal,credentials:'omit'});
+          if(!res.ok)return;
+          const data=await res.json();
+          if(!controller.signal.aborted)setRhWiki({key:wikiKey,places:(data.query?.pages||[]).map(rhWikiPlace).filter(Boolean)});
+        }catch{}finally{clearTimeout(timeout);}
+      },900);
+      return ()=>{clearTimeout(timeout);clearTimeout(timer);controller.abort();};
+    },[wikiKey]);
     const visibleNearby=React.useMemo(()=>{
       if(activeTab!=='rightnow'||!now)return [];
       const pool=new Map();
@@ -8601,7 +8791,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
       insert({title:'Isuien Garden',query:'Isuien Garden Nara',city:'Nara',category:'nature',info:'Giardino paesaggistico vicino a Tōdai-ji. Scegliete questo oppure il vicino Yoshikien lungo la passeggiata.'});
       routeIdeas.forEach(p=>insert({...p,query:p.mapQuery,category:p.group==='wow'?'love':p.group==='autumn'?'nature':rhCategoryFromText(p.title+' '+p.mapQuery),info:p.desc}));
       seasonalIdeas.forEach(p=>insert({title:p.title,query:p.mapQuery,city:p.city,category:'nature',info:p.desc}));
-      rhExternal.forEach(insert);rhMapPlaces.forEach(insert);
+      rhExternal.forEach(insert);rhMapPlaces.forEach(insert);if(wikiKey&&rhWiki?.key===wikiKey)rhWiki.places.forEach(insert);
 
       const normalized=rhSearch.trim().toLocaleLowerCase();
       const allEntries=[...pool.values()];
@@ -8616,6 +8806,11 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
       const candidates=[...catalog,...external];
       const seasonalKeys=new Set(seasonalIdeas.map(p=>questKey(p.mapQuery)));
       const inSeason=p=>seasonalKeys.has(questKey(p.query))||/illumina|foliage|momiji|aceri|autunn|rikugien|keyakizaka|midosuji|nakanoshima|meiji jingu gaien/i.test(p.title+' '+p.info+' '+p.query);
+      const rankDistance=p=>{
+        const pattern=RH_INTEREST_PATTERNS[p.category];
+        const matched=pattern?.test([p.title,p.query,...(p.aliases||[]),p.info].join(' '));
+        return p.distance-(matched?1.5:0)-(p.source==='wikipedia'&&p.category==='sight'?0.4:0);
+      };
       const nowFiltered=now?candidates.map(p=>({...p,
           distance:rhDistanceKm(now.lat,now.lon,p.coords[0],p.coords[1])}))
         .filter(p=>p.distance<=rhRadius+0.0001 && (rhCategories.includes(p.category)||(includeSeasonal&&inSeason(p))) &&
@@ -8624,14 +8819,14 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
         .filter(p=>p.plannedDays.length||!rhInfrastructure(p.title+' '+p.query))
         // Discoveries first; planned stops remain in the same list, visibly labelled.
         // Within each group, distance remains the sorting criterion.
-        .sort((a,b)=>(Number(a.osm)-Number(b.osm)) ||
+        .sort((a,b)=>rankDistance(a)-rankDistance(b) ||
           a.distance-b.distance||Number(a.plannedDays.length>0)-Number(b.plannedDays.length>0)||a.title.localeCompare(b.title,'it')):[];
       // Deduplicate identical chains/sites in the same neighborhood without
       // silently merging different branches of a brand elsewhere in Japan.
       const visible=[];
       for(const p of nowFiltered){if(!visible.some(q=>rhSamePlace(p,q)))visible.push(p);}
       return visible;
-    },[activeTab,now,customDayRoutes,atlasGeocodes,favourites,rhExternal,rhMapPlaces,rhRadius,rhCategories,rhSearch]);
+    },[activeTab,now,customDayRoutes,atlasGeocodes,favourites,rhExternal,rhMapPlaces,rhWiki,wikiKey,rhRadius,rhCategories,rhSearch]);
     const renderRightHereNow=()=>{
       const R=React.createElement;
       const visitMinutes=p=>/museum|museo|teamlab/i.test(p.title+' '+p.query)?90:({tea:30,food:45,nature:40,science:60,love:30}[p.category]||20);
@@ -8687,11 +8882,11 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
           ),
           R('div',{className:'rh-osm-row'},
             R('button',{type:'button',className:'rh-secondary',disabled:!now||rhBusy||!rhCategories.length,onClick:()=>rhLoadOsm()},rhBusy?'⌛ Ricerca in corso…':'↻ Aggiorna scoperte'),
-            R('span',null,'Catalogo di viaggio nel raggio scelto. OpenStreetMap aggiunge luoghi specializzati entro 5 km.'))),
+            R('span',null,'Catalogo di viaggio nel raggio scelto. OpenStreetMap cerca entro 5 km. Wikipedia cerca siti UNESCO, musei nazionali, parchi nazionali e paesaggi riconosciuti entro 10 km, sempre nel raggio scelto.'))),
         R('section',{className:'rh-result-panel'},
           R('div',{className:'rh-result-header'},
             R('div',null,R('h3',{'aria-live':'polite'},now?visible.length+' luoghi vicini · '+visible.filter(p=>p.plannedDays.length).length+' nel Planner':'Luoghi da scoprire'),
-              R('p',null,now?'Intorno a '+(rhLocationMode==='manual'?(rhManualLocation?.label||'località scelta'):'GPS')+' · luoghi del catalogo in ordine di distanza, seguiti dalle idee online. Le etichette indicano le tappe in programma.':rhLocationMode==='manual'?'Cerca o seleziona una località per esplorare i dintorni.':'Consenti il GPS oppure scegli una località da esplorare.')),
+              R('p',null,now?'Intorno a '+(rhLocationMode==='manual'?(rhManualLocation?.label||'località scelta'):'GPS')+' · luoghi ordinati per vicinanza e corrispondenza con i vostri interessi. Le etichette indicano le tappe in programma.':rhLocationMode==='manual'?'Cerca o seleziona una località per esplorare i dintorni.':'Consenti il GPS oppure scegli una località da esplorare.')),
             R('button',{type:'button',className:'rh-secondary',onClick:()=>setRhShowMap(p=>!p)},rhShowMap?'☷ Nascondi mappa':'🗺️ Mostra mappa')),
           rhShowMap&&R('div',{className:'rh-map-holder',ref:rhMapPanelRef},
              R('div',{className:'j58-map-legend','aria-label':'Legenda dei pin sulla mappa'},
@@ -8715,7 +8910,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
                   (booked?R('span',{className:'rh-fixed'},'🎟️ Prenotazione fissa'):null)),
                 R('h4',null,p.title),
                 p.area&&R('small',{className:'rh-place-area'},p.area+' · '+p.city),
-                R('p',null,mapPlaceSummary(p))),
+                R('p',null,mapPlaceSummary(p)),p.source==='wikipedia'&&R('a',{href:p.url,target:'_blank',rel:'noopener noreferrer'},'Wikipedia ↗')),
               R('div',{className:'rh-place-actions'},
                 R('button',{type:'button',className:'rh-add j45-quest-btn',onClick:()=>{if(p.coords)setAtlasGeocodes(prev=>({...prev,[atlasKey(p.query)]:p.coords}));openDayPicker({title:p.title,mapQuery:p.query,city:p.city,desc:rhReadableDescription(p.info)});}},questLabel(p)),
                 starButton({title:p.title,mapQuery:p.query,city:p.city,category:p.category}, {category:p.category}, 'favorite-star favorite-star-small rh-fav-action'),
@@ -8809,6 +9004,8 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
             React.createElement("span", null, "\u2728"),
             " ",
             toastMsg)),
+        editorAccess&&!postcardMode&&!cloudPanelOpen&&React.createElement('button',{className:'s96return',onClick:()=>setPostcardMode('editor')},'Prepara la cartolina'),
+        postcardMode&&!cloudPanelOpen&&(postcardMode==='editor'?editorAccess:japanNowDate==='2026-12-18')&&React.createElement(Postcard96,{key:postcardMode,editor:postcardMode==='editor',connected:cloudInfo.connected,close:()=>setPostcardMode(''),connect:()=>setCloudPanelOpen(true)}),
         favouritesOpen && renderFavouritesModal(),
         renderDayPicker(),
         geoChoices && React.createElement('div',{className:'v31-modal-shade',onClick:()=>setGeoChoices(null)},React.createElement('section',{className:'v31-day-picker',role:'dialog','aria-modal':true,'aria-label':'Scegli il pin trovato',onClick:e=>e.stopPropagation()},
