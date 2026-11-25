@@ -3164,7 +3164,7 @@ function japan40CreatePin(p,selected=false,route=false){
    (planned?'j58-pin-planned ':'')+(fav?'j58-pin-favorite ':'');
  pin.style.setProperty('--pin-color',planned?'#16649c':fav?'#c38b25':(TRIP_ATLAS_COLORS[p.category]||'#216f8c'));
  const symbol=document.createElement('span');symbol.className='j58-pin-symbol';
- symbol.textContent=p.id==='rh_me'?'🎯':planned?'📅':p.id.startsWith('rh_')?'🧭':(fav?'★':(p.emoji||'📍'));pin.appendChild(symbol);
+ symbol.textContent=p.id==='rh_me'?(p.emoji||'🎯'):planned?'📅':p.id.startsWith('rh_')?'🧭':(fav?'★':(p.emoji||'📍'));pin.appendChild(symbol);
  if(planned){
    const day=document.createElement('span');day.className='j58-pin-day';
    day.textContent='D'+(Number(days[0])+1)+(days.length>1?'+':'');pin.appendChild(day);
@@ -4463,19 +4463,21 @@ function japan33GeoError(error) {
   return new Error(msg ? 'GPS: '+msg : 'GPS non disponibile: controlla autorizzazione e localizzazione del dispositivo.');
 }
 function japan33ValidPosition(coords, source) {
-  const lat=Number(coords?.latitude), lon=Number(coords?.longitude);
+  const lat=coords?.latitude==null?NaN:Number(coords.latitude), lon=coords?.longitude==null?NaN:Number(coords.longitude);
   if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)
     throw new Error('Il dispositivo ha fornito coordinate GPS non valide.');
-  return {lat,lon,accuracy:Number.isFinite(Number(coords.accuracy))?Math.round(Number(coords.accuracy)):null,source};
+  return {lat,lon,accuracy:coords.accuracy!=null&&Number.isFinite(Number(coords.accuracy))&&Number(coords.accuracy)>=0?Math.round(Number(coords.accuracy)):null,source};
 }
 function japan33WebPosition(accuracy, timeout) {
   return new Promise((resolve,reject)=>{
     if(!navigator.geolocation){reject(new Error('GPS non disponibile in questo browser. Apri la versione HTTPS dell’app.'));return;}
-    navigator.geolocation.getCurrentPosition(
-      p=>{try{resolve(japan33ValidPosition(p.coords,'browser'));}catch(e){reject(e);}},
-      e=>reject(e),
+    const guard=setTimeout(()=>reject(Object.assign(new Error('GPS timeout'),{code:3})),timeout+2000);
+    const finish=(fn,value)=>{clearTimeout(guard);fn(value);};
+    try{navigator.geolocation.getCurrentPosition(
+      p=>{try{finish(resolve,japan33ValidPosition(p.coords,'browser'));}catch(e){finish(reject,e);}},
+      e=>finish(reject,e),
       {enableHighAccuracy:accuracy,timeout,maximumAge:15000}
-    );
+    );}catch(e){finish(reject,e);}
   });
 }
 async function japan24GetPosition() {
@@ -4510,7 +4512,7 @@ async function japan24GetPosition() {
   if(window.isSecureContext===false && !native)
     throw new Error('Il GPS richiede HTTPS o l’APK Android. Apri il sito pubblicato, non il file HTML scaricato.');
   try{
-    if(navigator.permissions?.query){try{const status=await navigator.permissions.query({name:'geolocation'});if(status.state==='denied')throw Object.assign(new Error('Permission denied'),{code:1});}catch(e){if(e.code===1)throw e;}}
+    // Request directly; Permissions API may be unsupported or hang in some WebViews.
     return await japan33WebPosition(false,12000);
   }catch(first){
     if(Number(first?.code)===1)throw japan33GeoError(first);
@@ -6597,6 +6599,8 @@ function App() {
     // Right Here, Right Now: user-selected interests are stored on this device;
     // live location and public OSM results are intentionally NOT persisted or synced.
     const [rhPosition,setRhPosition]=React.useState(null);
+    const [rhGpsStatus,setRhGpsStatus]=React.useState('');
+    const [rhGpsBusy,setRhGpsBusy]=React.useState(false);
     const [rhLocationMode,setRhLocationMode]=React.useState('manual');
     const rhLocationIntent=React.useRef(0);
     const [rhPlaceQuery,setRhPlaceQuery]=React.useState('');
@@ -8681,24 +8685,22 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
 
     const rhReadPosition=async()=>{
       const intent=++rhLocationIntent.current;
-      setRhPlaceBusy(false);setRhPlaceOptions([]);
-      setRhStatus('📡 Ricerca posizione GPS in corso…');
+      setRhPlaceBusy(false);setRhPlaceOptions([]);setRhGpsBusy(true);
+      setRhGpsStatus('📡 Ricerca posizione… autorizza il browser se richiesto.');
       try{
         const pos=await japan24GetPosition();
         if(intent!==rhLocationIntent.current)return;
-        if(!rhWithinJapan(pos.lat,pos.lon)){setRhStatus('📍 GPS funzionante: sei fuori dal Giappone. La ricerca di Esplora è limitata al Giappone; scegli un’area o usa Drop Pin.');return;}
-        setRhMapPlaces([]);setRhLocationMode('gps');setRhCenterRequest(pos);setRhPosition(pos);setRhExternal([]);setRhDiscoveryState('idle');setRhChosen('');
-        const city=rhNearestCity(pos.lat,pos.lon);
-        setRhStatus(`📍 Posizione disponibile · ${city} · precisione dichiarata ${pos.accuracy===null?'non nota':'~'+pos.accuracy+' m'}. Distanze in linea d’aria.`);
-      }catch(error){if(intent===rhLocationIntent.current)setRhStatus((error?.message||'GPS non disponibile.')+' Puoi comunque scegliere un’area o usare Drop Pin.');}
+        const inJapan=rhWithinJapan(pos.lat,pos.lon);
+        rhRequestController.current?.abort();rhGeneration.current++;
+        setRhMapPlaces([]);setRhLocationMode('gps');setRhCenterRequest(pos);setRhPosition(pos);setRhShowMap(true);setRhExternal([]);setRhDiscoveryState(inJapan?'idle':'outside');setRhChosen('');setRhSearch('');setRhLimit(24);setRhStatus('');
+        const accuracy=pos.accuracy===null?'precisione non nota':'precisione ~'+pos.accuracy+' m';
+        setRhGpsStatus('📍 Posizione rilevata · '+accuracy+' · '+(pos.source==='android'?'Android':'browser')+'. '+(inJapan?'La mappa è centrata sulla tua posizione.':'Sei fuori dal Giappone: puoi verificare il GPS sulla mappa. Scegli un’area giapponese per cercare luoghi.'));
+      }catch(error){if(intent===rhLocationIntent.current)setRhGpsStatus('⚠️ '+(error?.message||'GPS non disponibile.')+' Puoi comunque scegliere un’area o usare Drop Pin.');}
+      finally{if(intent===rhLocationIntent.current)setRhGpsBusy(false);}
     };
-    const gpsRequestedOnEntry=React.useRef(false);
+    // V104: explicit user gesture to request location; no unsolicited permission prompt.
     React.useEffect(()=>{
-      if(activeTab!=='rightnow'){gpsRequestedOnEntry.current=false;return;}
-      if(gpsRequestedOnEntry.current)return;
-      gpsRequestedOnEntry.current=true;
-      if(rhLocationMode==='manual'&&rhManualLocation)return;
-      rhReadPosition();
+      if(activeTab!=='rightnow'){rhLocationIntent.current++;setRhGpsBusy(false);setRhPlaceBusy(false);setRhGpsStatus('');}
     },[activeTab]);
     const rhLoadOsm=async({automatic=false}={})=>{
       const center=rhLocationMode==='manual'?rhManualLocation:rhPosition;
@@ -8773,13 +8775,14 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
       const center=rhLocationMode==='manual'?rhManualLocation:rhPosition;
       rhGeneration.current++;setRhBusy(false);setRhExternal([]);setRhDiscoveryState('idle');
       if(activeTab!=='rightnow'||!center||!rhCategories.length)return;
+      if(!rhWithinJapan(center.lat,center.lon)){setRhDiscoveryState('outside');return;}
       const handle=setTimeout(()=>rhLoadOsm({automatic:true}),1200);
       return ()=>{clearTimeout(handle);rhRequestController.current?.abort();rhGeneration.current++;};
     },[activeTab,rhLocationMode,rhPosition,rhManualLocation,rhRadius,rhCategories]);
     // V35: choose a reference location for research without moving or impersonating GPS.
     const rhChooseLocation=(place,fromPin=false)=>{
       if(!place||!Number.isFinite(place.lat)||!Number.isFinite(place.lon))return;
-      rhLocationIntent.current++;setRhPlaceBusy(false);
+      rhLocationIntent.current++;setRhPlaceBusy(false);setRhGpsBusy(false);setRhGpsStatus('');
       setRhMapPlaces([]);setRhCenterRequest({...place,preserveZoom:fromPin});rhGeneration.current++;setRhManualLocation(place);setRhLocationMode('manual');setRhPlaceOptions([]);
       setRhExternal([]);setRhDiscoveryState('idle');setRhChosen('');setRhSearch('');setRhLimit(24);
       setRhStatus('🎯 Esplorazione da '+place.label+'. Le distanze sono calcolate da questo punto, non dalla tua posizione GPS.');
@@ -8788,7 +8791,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
       if(e?.preventDefault)e.preventDefault();
       const query=rhPlaceQuery.trim();
       if(query.length<2){setRhStatus('Inserisci almeno due lettere per cercare una località.');return;}
-      const intent=++rhLocationIntent.current;
+      const intent=++rhLocationIntent.current;setRhGpsBusy(false);setRhGpsStatus('');
       const needle=atlasKey(query);
       if(!needle){setRhStatus('Inserisci un nome o un indirizzo.');return;}
       const areaCenters=Object.fromEntries(Object.entries(RH_AREA_CATALOG).flatMap(([city,areas])=>areas.map(([label,lat,lon])=>[label+" · "+city,[lat,lon]])));
@@ -8830,7 +8833,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
       window.setTimeout(()=>rhMapPanelRef.current?.scrollIntoView?.({behavior:'smooth',block:'center'}),75);
     };
     const now=rhLocationMode==='manual'?rhManualLocation:rhPosition;
-    const wikiKey=activeTab==='rightnow'&&now&&rhCategories.some(c=>['science','nature','sight'].includes(c))?[now.lat,now.lon,rhRadius].join('|'):'';
+    const wikiKey=activeTab==='rightnow'&&now&&rhWithinJapan(now.lat,now.lon)&&rhCategories.some(c=>['science','nature','sight'].includes(c))?[now.lat,now.lon,rhRadius].join('|'):'';
     React.useEffect(()=>{
       if(!wikiKey)return;
       const controller=new AbortController();
@@ -8848,7 +8851,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
       return ()=>{clearTimeout(timeout);clearTimeout(timer);controller.abort();};
     },[wikiKey]);
     const visibleNearby=React.useMemo(()=>{
-      if(activeTab!=='rightnow'||!now)return [];
+      if(activeTab!=='rightnow'||!now||!rhWithinJapan(now.lat,now.lon))return [];
       const pool=new Map();
       const insert=(p)=>{
         const query=String(p.query||p.mapQuery||p.title||'').trim();
@@ -8948,13 +8951,14 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
       return R('div',{className:'rh-page'},
         R('section',{className:'rh-hero'},
           R('div',null,R('h2',null,'Esplora i dintorni'),R('p',null,'Trascina il pin, tocca un punto o sposta la mappa per cercare al centro della nuova zona.')),
-          R('button',{type:'button',className:'rh-primary',onClick:rhReadPosition},'◎ Usa il GPS')),
+          R('button',{type:'button',className:'rh-primary',disabled:rhGpsBusy,onClick:rhReadPosition},rhGpsBusy?'⌛ Cerco posizione…':'◎ Usa il GPS')),
+        rhGpsStatus&&R('p',{className:'gps-feedback',style:{padding:'10px 12px',background:'#eaf4f7',borderRadius:8},role:'status','aria-live':'polite'},rhGpsStatus),
         R('section',{className:'rh-location','aria-label':'Punto di partenza'},
           R('div',{className:'rh-location-manual'},
             R('form',{className:'rh-location-search',onSubmit:rhSearchPlace},
               R('label',{htmlFor:'rh-place-search'},'Posizione da esplorare'),
               R('div',{className:'rh-location-search-row'},
-                R('input',{type:'search',id:'rh-place-search',value:rhPlaceQuery,onChange:e=>{rhLocationIntent.current++;setRhPlaceBusy(false);setRhPlaceOptions([]);setRhPlaceQuery(e.target.value);},placeholder:'Es. Asakusa, Tokyo / Gion, Kyoto','aria-label':'Località da cercare'}),
+                R('input',{type:'search',id:'rh-place-search',value:rhPlaceQuery,onChange:e=>{rhLocationIntent.current++;setRhPlaceBusy(false);setRhGpsBusy(false);setRhGpsStatus('');setRhPlaceOptions([]);setRhPlaceQuery(e.target.value);},placeholder:'Es. Asakusa, Tokyo / Gion, Kyoto','aria-label':'Località da cercare'}),
                 R('button',{type:'submit',disabled:rhPlaceBusy||rhPlaceQuery.trim().length<2},rhPlaceBusy?'Cerco…':'⌕ Cerca zona'))),
             rhPlaceOptions.length>0&&R('div',{className:'rh-location-results',role:'group','aria-label':'Risultati ricerca località'},
               R('strong',null,'Quale località intendi?'),
@@ -8968,7 +8972,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
               R('div',{className:'rh-chips'},...RH_AREA_CATALOG[rhAreaCity].map(([label,lat,lon])=>R('button',{key:label,type:'button',className:'rh-chip',onClick:()=>rhChooseLocation({lat,lon,label:label+' · '+rhAreaCity})},'📍 '+label))),
               R('small',null,'Scegli una zona per centrare il pin. Puoi sempre spostarlo liberamente. L’elenco dei luoghi precaricati è disponibile anche senza ricerca online; la cartografia può richiedere internet.')),
             now&&R('div',{className:'rh-location-selected'},'Punto scelto · ',R('strong',null,rhLocationMode==='gps'?'Posizione GPS':now.label)))),
-        R('span',{className:/^(GPS non disponibile|Il GPS è fuori|⚠️)/.test(rhStatus)?'gps-feedback':'sr-only',role:'status','aria-live':'polite'},rhStatus),
+        !now&&rhStatus&&R('p',{className:'gps-feedback',role:'status','aria-live':'polite'},rhStatus),
         R('details',{className:'rh-filters',open:true},R('summary',null,'Interessi e filtri · '+rhCategories.length+' selezionati · '+rhRadius+' km'),
           R('div',{className:'rh-section-heading'},R('div',null,R('h3',null,'I nostri interessi'),R('p',null,'Tocca per includere o escludere. Le categorie selezionate restano salvate su questo dispositivo.')),
             R('div',{className:'rh-filter-actions'},R('button',{type:'button',onClick:()=>setRhCategories([...RH_DEFAULT_CATEGORIES,'seasonal'])},'Tutte'),R('button',{type:'button',onClick:()=>setRhCategories([])},'Nessuna'))),
@@ -8978,7 +8982,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
             R('label',null,'Filtra elenco ',R('input',{type:'search',value:rhSearch,onChange:e=>setRhSearch(e.target.value),placeholder:'Nome, quartiere, tipo…','aria-label':'Cerca nei luoghi vicini'})),
           ),
           R('div',{className:'rh-osm-row'},
-            R('button',{type:'button',className:'rh-secondary',disabled:!now||rhBusy||!rhCategories.length,onClick:()=>rhLoadOsm()},rhBusy?'⌛ Ricerca in corso…':'↻ Aggiorna scoperte'),
+            R('button',{type:'button',className:'rh-secondary',disabled:!now||!rhWithinJapan(now.lat,now.lon)||rhBusy||!rhCategories.length,onClick:()=>rhLoadOsm()},rhBusy?'⌛ Ricerca in corso…':'↻ Aggiorna scoperte'),
             R('span',null,'Catalogo precaricato + OpenStreetMap, con Wikipedia fino a 10 km. Nessuna API a pagamento. I pin del catalogo sono indicativi; controlla il luogo su Maps prima di partire.'))),
         now&&rhWithinJapan(now.lat,now.lon)&&R('details',{className:'rh-filters'},R('summary',null,'🔎 Cerca anche su Google Maps'),
           R('p',null,'Apri una ricerca per interesse centrata sulla zona selezionata. I risultati di Maps non vengono importati automaticamente.'),
@@ -8989,8 +8993,8 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
           }))),
         R('section',{className:'rh-result-panel'},
           R('div',{className:'rh-result-header'},
-            R('div',null,R('h3',{'aria-live':'polite'},now?(['loading','idle'].includes(rhDiscoveryState)&&rhCategories.length&&!visible.length?'Ricerca in corso…':visible.length+' luoghi vicini')+' · '+visible.filter(p=>p.plannedDays.length).length+' nel Planner':'Luoghi da scoprire'),
-              R('p',null,now?'Intorno a '+(rhLocationMode==='manual'?(rhManualLocation?.label||'località scelta'):'GPS')+' · luoghi ordinati per vicinanza e corrispondenza con i vostri interessi. Le etichette indicano le tappe in programma.':rhLocationMode==='manual'?'Cerca o seleziona una località per esplorare i dintorni.':'Consenti il GPS oppure scegli una località da esplorare.')),
+            R('div',null,R('h3',{'aria-live':'polite'},now&&!rhWithinJapan(now.lat,now.lon)?'GPS rilevato · fuori dal Giappone':now?(['loading','idle'].includes(rhDiscoveryState)&&rhCategories.length&&!visible.length?'Ricerca in corso…':visible.length+' luoghi vicini')+' · '+visible.filter(p=>p.plannedDays.length).length+' nel Planner':'Luoghi da scoprire'),
+              R('p',null,now&&!rhWithinJapan(now.lat,now.lon)?'La mappa mostra la posizione rilevata. Per esplorare i luoghi seleziona una zona del Giappone.':now?'Intorno a '+(rhLocationMode==='manual'?(rhManualLocation?.label||'località scelta'):'GPS')+' · luoghi ordinati per vicinanza e corrispondenza con i vostri interessi. Le etichette indicano le tappe in programma.':rhLocationMode==='manual'?'Cerca o seleziona una località per esplorare i dintorni.':'Consenti il GPS oppure scegli una località da esplorare.')),
             R('button',{type:'button',className:'rh-secondary',onClick:()=>setRhShowMap(p=>!p)},rhShowMap?'☷ Nascondi mappa':'🗺️ Mostra mappa')),
           rhShowMap&&R('div',{className:'rh-map-holder',ref:rhMapPanelRef},
              R('div',{className:'j58-map-legend','aria-label':'Legenda dei pin sulla mappa'},
@@ -8999,10 +9003,10 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
                R('span',null,R('span',{className:'j58-legend-icon j58-legend-fav'},'★'),' Preferito')),
              R(TripAtlasCanvas,{
              places:[{id:'rh_me',query:'Centro esplorazione',title:!now?'Tokyo (mappa di riferimento)':rhLocationMode==='manual'?'🎯 '+(rhManualLocation?.label||'Località scelta'):'📍 La nostra posizione',city:now?rhNearestCity(now.lat,now.lon):'Tokyo',category:'favorite',emoji:rhLocationMode==='manual'?'🎯':'◎',coords:now?[now.lat,now.lon]:TRIP_ATLAS_CENTERS.Tokyo},...limited.map(p=>({...p,isFavorite:isFavourite({mapQuery:p.query,title:p.title})}))],
-             selectedId:rhChosen,onSelect:id=>setRhChosen(id),routeStops:[],city:now?rhNearestCity(now.lat,now.lon):'Tokyo',visible:rhShowMap,onToast:showToast,showAll:true,focusStamp:rhMapFocusStamp,centerRequest:rhCenterRequest,onMapPlaces:setRhMapPlaces,
+             selectedId:rhChosen,onSelect:id=>setRhChosen(id),routeStops:[],city:now?rhNearestCity(now.lat,now.lon):'Tokyo',visible:rhShowMap,onToast:showToast,showAll:true,focusStamp:rhMapFocusStamp,centerRequest:rhCenterRequest,onMapPlaces:now&&rhWithinJapan(now.lat,now.lon)?setRhMapPlaces:null,
              onAddPlace:p=>{if(p.coords)setAtlasGeocodes(prev=>({...prev,[atlasKey(p.query)]:p.coords}));openDayPicker({title:p.title,mapQuery:p.query,city:p.city,desc:rhReadableDescription(p.info)});},onChooseDay:p=>{if(p.coords)setAtlasGeocodes(prev=>({...prev,[atlasKey(p.query)]:p.coords}));openDayPicker({title:p.title,mapQuery:p.query,city:p.city,desc:rhReadableDescription(p.info)});},
              onMapPoint:(lat,lon)=>{if(rhWithinJapan(lat,lon))rhChooseLocation({lat,lon,label:'Pin '+lat.toFixed(4)+', '+lon.toFixed(4)},true);},onOpenPlannedDay:day=>showDayInPlanner(day),onOpenDetails:rhShowDetails})),
-          now&&R('p',{className:'rh-disclaimer',role:'status'},rhStatus),
+          now&&rhStatus&&R('p',{className:'rh-disclaimer',role:'status'},rhStatus),
           now&&visible.length>0 ? R('div',{className:'rh-cards'},...limited.map(p=>{
             const plannedDays=p.plannedDays||[],booked=plannedDays.some(day=>atlasKey(PLANNER_BOOKING_STOPS[day])===atlasKey(p.query));
             const dayLabel=plannedDays.map(d=>'D'+(d+1)).join(' · ');
@@ -9020,8 +9024,8 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
                 starButton({title:p.title,mapQuery:p.query,city:p.city,category:p.category}, {category:p.category}, 'favorite-star favorite-star-small rh-fav-action'),
                 R('button',{type:'button',onClick:()=>rhShowOnMap(p),'aria-label':'Apri la mappa centrata su '+p.title},'⌖ Mappa'),
                 R('a',{href:j45GoogleMapsLink(p),className:'j45-maps-link j52-compact-maps',target:'_blank',rel:'noopener noreferrer',title:'Apri su Google Maps','aria-label':'Apri '+p.title+' su Google Maps'},'↗')));
-          })) : now&&R('div',{className:'rh-empty'},rhCategories.length===0?'Seleziona almeno un interesse per vedere le proposte.':rhDiscoveryState==='loading'?'✨ Sto cercando luoghi intorno a te…':rhDiscoveryState==='error'?'La ricerca online non è riuscita: non significa che non ci siano luoghi. Prova Aggiorna scoperte o i link Google Maps.':rhDiscoveryState==='idle'?'Sto preparando la ricerca dei luoghi vicini…':'Nessun luogo trovato dalle fonti disponibili entro questo raggio. Prova la ricerca su Google Maps per interesse oppure amplia il raggio.'),
-          now&&visible.length<5&&rhRadius<20&&rhCategories.length>0&&R('button',{type:'button',className:'rh-secondary',onClick:()=>setRhRadius([1,2,3,5,10,20].find(v=>v>rhRadius))},'Amplia il raggio a '+[1,2,3,5,10,20].find(v=>v>rhRadius)+' km'),
+          })) : now&&R('div',{className:'rh-empty'},!rhWithinJapan(now.lat,now.lon)?'GPS funzionante. La scoperta di luoghi è limitata al Giappone.':rhCategories.length===0?'Seleziona almeno un interesse per vedere le proposte.':rhDiscoveryState==='loading'?'✨ Sto cercando luoghi intorno a te…':rhDiscoveryState==='error'?'La ricerca online non è riuscita: non significa che non ci siano luoghi. Prova Aggiorna scoperte o i link Google Maps.':rhDiscoveryState==='idle'?'Sto preparando la ricerca dei luoghi vicini…':'Nessun luogo trovato dalle fonti disponibili entro questo raggio. Prova la ricerca su Google Maps per interesse oppure amplia il raggio.'),
+          now&&rhWithinJapan(now.lat,now.lon)&&visible.length<5&&rhRadius<20&&rhCategories.length>0&&R('button',{type:'button',className:'rh-secondary',onClick:()=>setRhRadius([1,2,3,5,10,20].find(v=>v>rhRadius))},'Amplia il raggio a '+[1,2,3,5,10,20].find(v=>v>rhRadius)+' km'),
           now&&visible.length>rhLimit&&R('button',{type:'button',className:'rh-load-more',onClick:()=>setRhLimit(v=>v+12)},'Mostra altri '+Math.min(12,visible.length-rhLimit)+' luoghi ('+rhLimit+'/'+visible.length+')'),
           now&&R('div',{className:'rh-bottom-actions'},R('button',{type:'button',onClick:()=>{showDayInPlanner(targetDay);}},'🗓️ Apri la giornata '+(targetDay+1)+' nel Planner'))),
         R('p',{className:'rh-disclaimer'},'Distanze in linea d’aria. Verifica accesso e orari su Maps o sul sito ufficiale.'));
