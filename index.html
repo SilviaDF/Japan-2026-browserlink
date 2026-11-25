@@ -6318,8 +6318,8 @@ function Postcard96({editor=false,close,connect,connected}){
  const back=()=>editor?go('edit'):close();
  return R('dialog',{ref:dialog,className:'secret96',onCancel:e=>{e.preventDefault();if(!busy)close();},'aria-label':editor?'Prepara la cartolina':'Una sorpresa per Ugo'},
  R('div',{className:'s96top'},R('small',null,'18 DICEMBRE · NARITA'),R('button',{onClick:close,disabled:busy,'aria-label':'Chiudi'},'×')),
- !connected?R('div',{className:'s96paper'},R('p',null,'Collega questo telefono al vostro viaggio per aprire la cartolina.'),R('button',{onClick:connect},'Apri sincronizzazione')):
- !loaded?R('div',{className:'s96paper'},R('p',{role:'status'},msg||'Apro il viaggio…'),msg&&R('button',{onClick:()=>retry(n=>n+1)},'Riprova')):
+ !connected&&page!=='scene'?R('div',{className:'s96paper'},R('p',null,'Collega questo telefono al vostro viaggio per aprire la cartolina.'),R('button',{onClick:connect},'Apri sincronizzazione')):
+ !loaded&&page!=='scene'?R('div',{className:'s96paper'},R('p',{role:'status'},msg||'Apro il viaggio…'),msg&&R('button',{onClick:()=>retry(n=>n+1)},'Riprova')):
  page==='edit'?R('div',{className:'s96paper'},R('h2',null,'Una cartolina per Ugo'),R('label',null,'La tua foto',R('input',{type:'file',accept:'image/*',disabled:busy,onChange:choosePhoto})),photo&&R('img',{className:'s96photo',src:photo,alt:'Foto scelta per la cartolina'}),R('label',null,'La tua dedica',R('textarea',{value:note,onChange:e=>write(e.target.value),maxLength:2400,rows:4,disabled:busy})),R('button',{disabled:busy||!photo||!note.trim(),onClick:()=>{go('scene');peck(0);}},'Anteprima'),R('button',{disabled:busy||!photo||!note.trim(),onClick:save},'Salva per il 18 dicembre'),R('p',{role:'status'},msg)):
  page==='scene'?R('div',null,R('div',{className:'s96scene'},R('div',{className:'s96window','aria-hidden':true},'✈'),R('div',{className:'s96case'},R(SecretSprite)),R('div',{className:'s96env'},'Per Ugo'),R('button',{className:'s96bird','aria-label':'Tocca il Cucco',onClick:()=>peck(n=>n+1)},R(SecretSprite,{bird:true})),chickens>=3&&R('div',{className:'s96flock'},R(SecretSprite,{bird:true}),R(SecretSprite,{bird:true}))),R('div',{className:'s96paper'},R('p',null,'Il Cucco ha trovato qualcosa nella valigia…'),R('button',{onClick:()=>go('letter')},'Apri la busta'),editor&&R('button',{onClick:back},'Modifica'))):
  R('div',{className:'s96paper'},R('h2',null,'Per Ugo'),photo&&R('img',{className:'s96photo',src:photo,alt:'La foto scelta da Silvia'}),R('p',{className:'s96note'},note||'La busta è ancora vuota.'),R('button',{onClick:editor?back:close},editor?'Torna alla modifica':'Chiudi la cartolina')));
@@ -6409,7 +6409,7 @@ function App() {
         setEditorAccess(false);setPostcardMode('');
         if(!token||!/^[a-f0-9]{48}$/.test(token))return;
         const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token));
-        if(n===sequence&&Array.from(new Uint8Array(hash),x=>x.toString(16).padStart(2,'0')).join('')==='b33c7d931017ced9ba0aefef1eb4342f23308a8a7446d97cb304682746ad69e7'){setEditorAccess(true);setPostcardMode('editor');}
+        if(n===sequence&&Array.from(new Uint8Array(hash),x=>x.toString(16).padStart(2,'0')).join('')==='b33c7d931017ced9ba0aefef1eb4342f23308a8a7446d97cb304682746ad69e7'){setEditorAccess(true);setTodayDayIndex(18);setActiveTab('today');setPostcardMode(new URLSearchParams(window.location.hash.slice(1)).get('giorno')==='19'?'':'editor');}
       };
       check();window.addEventListener('hashchange',check);return()=>{sequence++;window.removeEventListener('hashchange',check);};
     },[]);
@@ -8150,6 +8150,7 @@ function App() {
          R('div',{className:'trip-atlas-right-foot'},R('button',{onClick:resetCurrent},'↺ Ripristina giornata'),R('span',{className:'v31-day-count'},cloudInfo.connected?'☁️ Sync collegata':'💾 Salvato qui · Sync non collegata')),
          R('p',{className:'trip-atlas-panelnote'},'Itinerario unico per voi due · prenotazioni fisse protette. Il tratteggio sulla mappa indica l’ordine, non un tragitto stradale calcolato.'));
         return R('div',{className:'trip-atlas-wrapper'},
+         idx===18&&(editorAccess||japanNowDate==='2026-12-18')&&R('div',{className:'trip-atlas-panelhead'},R('span',null,'Narita · 19:30'),departureChest(idx)),
          R('nav',{className:'trip-atlas-mobile-tabs','aria-label':'Vista del Planner'},[['plan','🗓️ Itinerario'],['map','🗺️ Mappa'],['explore','✨ Esplora']].map(([id,label])=>R('button',{key:id,type:'button',className:atlasMobilePane===id?'active':'','aria-pressed':atlasMobilePane===id,onClick:()=>setAtlasMobilePane(id)},label))),
          R('div',{className:'trip-atlas-columns'},sidebar,mapview,right));
     };
@@ -8449,6 +8450,10 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
         return found || own;
     };
     // Daily console: current Japanese date, trip preview and single-day essentials.
+    function departureChest(idx){
+      if(idx!==18||(!editorAccess&&japanNowDate!=='2026-12-18'))return null;
+      return React.createElement('button',{className:'s96chest',type:'button','aria-label':'Apri lo scrigno',onClick:()=>setPostcardMode('reveal')},React.createElement(ChestIcon));
+    }
     const renderTodayTab = () => {
         const R = React.createElement;
         const idx = Math.max(0, Math.min(18, todayDayIndex));
@@ -8544,7 +8549,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
                     R('span',{className:'today-booking-icon'},flight.icon),
                     R('div',{className:'today-booking-info'},
                         R('strong',null,`${flight.type} · ${flight.airport}`),
-                        R('span',null,'Orario '+flight.time+' · ora locale giapponese',idx===18&&japanNowDate==='2026-12-18'&&R('button',{className:'s96chest',type:'button','aria-label':'Apri lo scrigno',onClick:()=>setPostcardMode('reveal')},R(ChestIcon)))),
+                        R('span',null,'Orario '+flight.time+' · ora locale giapponese',departureChest(idx))),
                     R('a',{href:maps(flight.mapQuery),target:'_blank',rel:'noreferrer',className:'today-mini-link'},'↗ Maps')),
                 event && R('div',{className:'today-booking'},
                     R('span',{className:'today-booking-icon'},event.emoji),
@@ -9005,7 +9010,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
             " ",
             toastMsg)),
         editorAccess&&!postcardMode&&!cloudPanelOpen&&React.createElement('button',{className:'s96return',onClick:()=>setPostcardMode('editor')},'Prepara la cartolina'),
-        postcardMode&&!cloudPanelOpen&&(postcardMode==='editor'?editorAccess:japanNowDate==='2026-12-18')&&React.createElement(Postcard96,{key:postcardMode,editor:postcardMode==='editor',connected:cloudInfo.connected,close:()=>setPostcardMode(''),connect:()=>setCloudPanelOpen(true)}),
+        postcardMode&&!cloudPanelOpen&&(postcardMode==='editor'?editorAccess:(editorAccess||japanNowDate==='2026-12-18'))&&React.createElement(Postcard96,{key:postcardMode,editor:postcardMode==='editor',connected:cloudInfo.connected,close:()=>setPostcardMode(''),connect:()=>setCloudPanelOpen(true)}),
         favouritesOpen && renderFavouritesModal(),
         renderDayPicker(),
         geoChoices && React.createElement('div',{className:'v31-modal-shade',onClick:()=>setGeoChoices(null)},React.createElement('section',{className:'v31-day-picker',role:'dialog','aria-modal':true,'aria-label':'Scegli il pin trovato',onClick:e=>e.stopPropagation()},
