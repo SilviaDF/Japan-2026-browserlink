@@ -1,71 +1,13 @@
-/* Japan Travel Companion v76: versioned application-shell cache.
- * Site/PWA uses the current deployment scope; no Firebase/API responses are cached.
- */
-const JAPAN_SHELL_CACHE = 'japan2026-v76-targeted-shell';
-const JAPAN_STATIC_CACHE = 'japan2026-v76-targeted-static';
-const JAPAN_SHELL_FILES = ['./index.html', './manifest.webmanifest'];
-const JAPAN_CDN_HOSTS = new Set([
-  'cdn.tailwindcss.com', 'unpkg.com', 'cdn.jsdelivr.net', 'fonts.googleapis.com',
-  'fonts.gstatic.com', 'www.gstatic.com'
-]);
+/* Japan Travel Companion V105: scope-local, versioned application shell. */
+const PREFIX='japan2026-'+encodeURIComponent(self.registration.scope)+'-';
+const SHELL=PREFIX+'v105-shell';
+const STATIC=PREFIX+'v105-static';
+const CORE=['./index.html','./manifest.webmanifest','./assets/react18-v105.js','./assets/utilities-v105.css'];
+const CDN=new Set(['unpkg.com','cdn.jsdelivr.net','fonts.googleapis.com','fonts.gstatic.com','www.gstatic.com']);
+self.addEventListener('install',e=>e.waitUntil((async()=>{const c=await caches.open(SHELL);await c.addAll(CORE.map(p=>new Request(p,{cache:'reload'})));await self.skipWaiting();})()));
+self.addEventListener('activate',e=>e.waitUntil((async()=>{for(const k of await caches.keys()){if(k.startsWith(PREFIX)&&k!==SHELL&&k!==STATIC)await caches.delete(k);}await self.clients.claim();})()));
+async function nav(req){const c=await caches.open(SHELL);const ac=new AbortController();const timer=setTimeout(()=>ac.abort(),3500);try{const r=await fetch(req,{signal:ac.signal,cache:'no-cache'});if(r.ok){await c.put('./index.html',r.clone());return r;}throw new Error('HTTP '+r.status);}catch{ return (await c.match('./index.html'))||Response.error(); }finally{clearTimeout(timer);}}
+async function asset(req){const core=await caches.open(SHELL);const cached=await core.match(req);if(cached)return cached;const c=await caches.open(STATIC);const hit=await c.match(req);if(hit)return hit;const r=await fetch(req);if(r.ok||r.type==='opaque'){try{await c.put(req,r.clone());}catch{}}return r;}
+self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET')return;const u=new URL(r.url);if(u.origin===self.location.origin&&u.href.startsWith(self.registration.scope)){if(r.mode==='navigate'||/\/index\.html$/.test(u.pathname)){e.respondWith(nav(r));return;}if(/\.(js|css|png|webp|svg|ico|webmanifest)$/.test(u.pathname)){e.respondWith(asset(r));return;}}if(CDN.has(u.hostname))e.respondWith(asset(r));});
 
-self.addEventListener('install', event => {
-  event.waitUntil((async () => {
-    const shell = await caches.open(JAPAN_SHELL_CACHE);
-    // Manifest can be unavailable when opening a standalone test deployment.
-    await Promise.allSettled(JAPAN_SHELL_FILES.map(async path => {
-      const result = await fetch(new Request(path, {cache: 'reload'}));
-      if (result.ok) await shell.put(path, result.clone());
-    }));
-    await self.skipWaiting();
-  })());
-});
-
-self.addEventListener('activate', event => {
-  // Do not delete older/other app caches: the site may share an origin with
-  // other GitHub Pages projects, and a previous app may hold offline content.
-  event.waitUntil(self.clients.claim());
-});
-
-async function cacheWithNetworkFirst(request, fallbackPath) {
-  const shell = await caches.open(JAPAN_SHELL_CACHE);
-  try {
-    const result = await fetch(request);
-    if (result.ok) await shell.put(request, result.clone());
-    return result;
-  } catch (error) {
-    return (await shell.match(request)) || (await shell.match(fallbackPath)) ||
-      Response.error();
-  }
-}
-async function cacheStatic(request) {
-  const cache = await caches.open(JAPAN_STATIC_CACHE);
-  const cached = await cache.match(request);
-  if (cached) return cached;
-  const response = await fetch(request);
-  if (response.ok || response.type === 'opaque') {
-    try { await cache.put(request, response.clone()); } catch (_) { /* no quota */ }
-  }
-  return response;
-}
-self.addEventListener('fetch', event => {
-  const request = event.request;
-  if (request.method !== 'GET') return;
-  const url = new URL(request.url);
-  if (url.origin === self.location.origin) {
-    if (request.mode === 'navigate' || /\/index\.html$/.test(url.pathname)) {
-      event.respondWith(cacheWithNetworkFirst(request, './index.html'));
-      return;
-    }
-    // Icons and manifest are small app resources.
-    if (/\.(png|webp|svg|ico|webmanifest|css|js)$/.test(url.pathname)) {
-      event.respondWith(cacheStatic(request));
-    }
-    return;
-  }
-  // Only cache fixed frontend dependencies; never cache Firestore, API traffic,
-  // user photographs, map tiles, geocoding, or Google Maps responses.
-  if (JAPAN_CDN_HOSTS.has(url.hostname)) {
-    event.respondWith(cacheStatic(request));
-  }
-});
+self.addEventListener('message',e=>{if(e.data!=='warm-v105')return;e.waitUntil((async()=>{for(const path of ['./assets/cucco-v105.webp','./assets/postcard-v105.webp']){try{await asset(new Request(new URL(path,self.registration.scope)));}catch{}}})());});
