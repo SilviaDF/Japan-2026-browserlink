@@ -3366,30 +3366,30 @@ const writeJapanStore = (key, value) => {
     }
     catch (error) { }
 };
-const PACKING_CATEGORIES=['Documenti','Tecnologia','Regalini','Extra'];
+const PACKING_CATEGORIES=['Documenti','Tecnologia','Extra'];
 const V107_GIFT_OLD_IDS=['pack-gift-friends','pack-gift-uk','pack-gift-latte','pack-gift-wrap'];
-const V107_GIFT={id:'pack-gift-all',category:'Regalini',label:'Regalini',done:false};
+const V107_GIFT={id:'pack-gift-all',category:'Extra',label:'Regalini',done:false};
 const packingLabelKey=value=>String(value||'').normalize('NFKC').trim().replace(/\s+/g,' ').toLocaleLowerCase('it');
 function v106Packing(items){
  const list=(Array.isArray(items)?items:[]).filter(x=>x&&typeof x==='object'&&String(x.label||'').trim());
  const legacy=list.filter(x=>V107_GIFT_OLD_IDS.includes(x.id));
  const remaining=list.filter(x=>!V107_GIFT_OLD_IDS.includes(x.id));
- const isGift=x=>x.category==='Regalini'||x.category==='Extra';
- if(legacy.length&&!remaining.some(x=>x.id===V107_GIFT.id||(isGift(x)&&packingLabelKey(x.label)==='regalini'))){
+ if(legacy.length&&!remaining.some(x=>x.id===V107_GIFT.id||packingLabelKey(x.label)==='regalini')){
   remaining.push({...V107_GIFT,done:legacy.every(x=>!!x.done)});
  }
  const result=[];
  for(const raw of remaining){
-  const item={...raw,category:String(raw.category||'Extra').trim()||'Extra',label:String(raw.label).trim(),done:!!raw.done};
-  if(isGift(item)&&packingLabelKey(item.label)==='regalini')item.category='Regalini';
-  const match=result.findIndex(x=>x.id===item.id||(packingLabelKey(x.label)===packingLabelKey(item.label)&&(x.category===item.category||(isGift(x)&&isGift(item)))));
+  const original=String(raw.category||'Extra').trim();
+  const item={...raw,category:PACKING_CATEGORIES.includes(original)?original:'Extra',label:String(raw.label).trim(),done:!!raw.done};
+  const match=result.findIndex(x=>x.id===item.id||(x.category===item.category&&packingLabelKey(x.label)===packingLabelKey(item.label)));
   if(match<0){result.push(item);continue;}
   const prev=result[match];
-  const preferred=(item.id===V107_GIFT.id||(item.category==='Regalini'&&prev.category==='Extra'))?item:prev;
+  const preferred=item.id===V107_GIFT.id?item:prev;
   result[match]={...preferred,done:prev.done||item.done};
  }
  return result;
 }
+
 const starterPackingItems = [
     { id: 'pack-passport', category: 'Documenti', label: 'Passaporti e copie digitali', done: false },
     { id: 'pack-insurance', category: 'Documenti', label: 'Assicurazione viaggio e contatti di emergenza', done: false },
@@ -6177,7 +6177,7 @@ function Japan24ActivityPage({status,onRefresh,archivePanel}){
    R('details',{className:'j28-diagnostics'},
      R('summary',null,'Dettagli sincronizzazione'),
      R('div',{className:'j28-diagnostics-body'},
-       R('p',null,'Viaggio: '+(status.tripTag||'—')+' · Versione: V110'),
+       R('p',null,'Viaggio: '+(status.tripTag||'—')+' · Versione: V111'),
        R('p',null,'Ultima modifica ricevuta: '+(status.lastRemoteAuthor||'—')+' · '+format(status.lastRemoteChange)),
        R('p',null,'Se manca qualcosa, verificate lo stesso viaggio su entrambi i telefoni e premete Aggiorna. Le foto dell’archivio vengono sincronizzate se il collegamento e i permessi cloud sono attivi.'))));
 }
@@ -7034,7 +7034,7 @@ function App() {
     const [packingDraft, setPackingDraft] = React.useState('');
     const [packingCategory,setPackingCategory]=React.useState('Extra');
     const [packingEdit,setPackingEdit]=React.useState(null);
-    const packingCategories=[...new Set([...PACKING_CATEGORIES,...packingItems.map(item=>item.category)])];
+    const packingCategories=PACKING_CATEGORIES;
     const [expenseName, setExpenseName] = React.useState('');
     const [expenseAmount, setExpenseAmount] = React.useState('');
     const [convertAmount, setConvertAmount] = React.useState('1000');
@@ -10067,9 +10067,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
                         packingCategories.map(category => {
                             const items=packingItems.filter(i=>i.category===category);
                             return React.createElement('div',{key:category,className:'mb-3'},
-                                React.createElement('div',{className:'flex items-center justify-between gap-2 mb-1'},
-                                    React.createElement('div',{className:'travel-kicker'},category),
-                                    React.createElement('button',{type:'button',className:'travel-no-print',style:{fontSize:'12px',padding:'5px 9px',border:'1px solid currentColor',borderRadius:'8px'},onClick:()=>{setPackingCategory(category);document.getElementById('pack-add-input')?.focus();},'aria-label':'Aggiungi in '+category},'+ Aggiungi')),
+                                React.createElement('div',{className:'travel-kicker mb-1'},category),
                                 items.length===0&&React.createElement('p',{className:'text-xs text-slate-500'},'Nessuna voce'),
                                 items.map(item=>React.createElement('div',{key:item.id,className:'mb-1'},
                                     React.createElement('div',{className:'travel-list-row',style:{display:'flex',alignItems:'center',gap:'8px'}},
@@ -10361,7 +10359,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
                     React.createElement("p", { className: "archive-disclaimer" }, "📷 Con la sincronizzazione attiva, entrambi potete ritrovare le foto nel vostro archivio condiviso."))))));
 }
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
-    navigator.serviceWorker.register('./sw.js').then(()=>navigator.serviceWorker.ready).then(reg=>{const warm=()=>{if(navigator.onLine&&navigator.connection?.saveData!==true)reg.active?.postMessage('warm-v110');};if(window.requestIdleCallback)requestIdleCallback(warm,{timeout:12000});else setTimeout(warm,8000);}).catch(() => { });
+    navigator.serviceWorker.register('./sw.js').then(()=>navigator.serviceWorker.ready).then(reg=>{const warm=()=>{if(navigator.onLine&&navigator.connection?.saveData!==true)reg.active?.postMessage('warm-v111');};if(window.requestIdleCallback)requestIdleCallback(warm,{timeout:12000});else setTimeout(warm,8000);}).catch(() => { });
 }
 const mount=document.getElementById('root');
 if(window.React && window.ReactDOM && location.hash!=='#offline'){
