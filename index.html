@@ -3366,8 +3366,9 @@ const writeJapanStore = (key, value) => {
     }
     catch (error) { }
 };
-const V106_GIFTS=[{id:'pack-gift-friends',category:'Regalini',label:'Pensierini per gli amici giapponesi di Ugo',done:false},{id:'pack-gift-uk',category:'Regalini',label:'Dolcetti / specialità confezionate dal Regno Unito o Italia (verificare dogana)',done:false},{id:'pack-gift-latte',category:'Regalini',label:'Regalino per Latte (giocattolo, non cibo)',done:false},{id:'pack-gift-wrap',category:'Regalini',label:'Sacchettini e bigliettini per i regali',done:false}];
-function v106Packing(items){const list=Array.isArray(items)?items:[];return [...list,...V106_GIFTS.filter(x=>!list.some(y=>y.id===x.id))];}
+const V107_GIFT_OLD_IDS=['pack-gift-friends','pack-gift-uk','pack-gift-latte','pack-gift-wrap'];
+const V107_GIFT={id:'pack-gift-all',category:'Regalini',label:'Regalini',done:false};
+function v106Packing(items){const list=Array.isArray(items)?items:[];const existing=list.find(x=>x.id===V107_GIFT.id);const done=existing?!!existing.done:V107_GIFT_OLD_IDS.every(id=>list.some(x=>x.id===id&&x.done));return [...list.filter(x=>x.id!==V107_GIFT.id&&!V107_GIFT_OLD_IDS.includes(x.id)),{...V107_GIFT,done}];}
 const starterPackingItems = [
     { id: 'pack-passport', category: 'Documenti', label: 'Passaporti e copie digitali', done: false },
     { id: 'pack-insurance', category: 'Documenti', label: 'Assicurazione viaggio e contatti di emergenza', done: false },
@@ -3879,12 +3880,6 @@ const JAPANESE_PHRASES = [
     },
     {
         "category": "Small talk",
-        "ja": "ゲームや読書が好きです。",
-        "romaji": "Gēmu ya dokusho ga suki desu.",
-        "it": "Mi piacciono i videogiochi e la lettura."
-    },
-    {
-        "category": "Small talk",
         "ja": "日本語はまだ少ししか話せません。",
         "romaji": "Nihongo wa mada sukoshi shika hanasemasen.",
         "it": "Parlo ancora pochissimo giapponese."
@@ -4020,6 +4015,192 @@ const JAPANESE_PHRASES = [
         "ja": "ラテちゃんに会えてうれしいです。",
         "romaji": "Rate-chan ni aete ureshii desu.",
         "it": "Sono felice di aver conosciuto Latte."
+    },
+    {
+        "category": "Numeri",
+        "ja": "ゼロ／零",
+        "romaji": "Zero / rei",
+        "it": "0 — zero"
+    },
+    {
+        "category": "Numeri",
+        "ja": "一",
+        "romaji": "Ichi",
+        "it": "1 — uno"
+    },
+    {
+        "category": "Numeri",
+        "ja": "二",
+        "romaji": "Ni",
+        "it": "2 — due"
+    },
+    {
+        "category": "Numeri",
+        "ja": "三",
+        "romaji": "San",
+        "it": "3 — tre"
+    },
+    {
+        "category": "Numeri",
+        "ja": "四",
+        "romaji": "Yon / shi",
+        "it": "4 — quattro"
+    },
+    {
+        "category": "Numeri",
+        "ja": "五",
+        "romaji": "Go",
+        "it": "5 — cinque"
+    },
+    {
+        "category": "Numeri",
+        "ja": "六",
+        "romaji": "Roku",
+        "it": "6 — sei"
+    },
+    {
+        "category": "Numeri",
+        "ja": "七",
+        "romaji": "Nana / shichi",
+        "it": "7 — sette"
+    },
+    {
+        "category": "Numeri",
+        "ja": "八",
+        "romaji": "Hachi",
+        "it": "8 — otto"
+    },
+    {
+        "category": "Numeri",
+        "ja": "九",
+        "romaji": "Kyū / ku",
+        "it": "9 — nove"
+    },
+    {
+        "category": "Numeri",
+        "ja": "十",
+        "romaji": "Jū",
+        "it": "10 — dieci"
+    },
+    {
+        "category": "Numeri",
+        "ja": "十一",
+        "romaji": "Jūichi",
+        "it": "11 — undici"
+    },
+    {
+        "category": "Numeri",
+        "ja": "二十",
+        "romaji": "Nijū",
+        "it": "20 — venti"
+    },
+    {
+        "category": "Numeri",
+        "ja": "百",
+        "romaji": "Hyaku",
+        "it": "100 — cento"
+    },
+    {
+        "category": "Numeri",
+        "ja": "三百",
+        "romaji": "Sanbyaku",
+        "it": "300 — trecento"
+    },
+    {
+        "category": "Numeri",
+        "ja": "六百",
+        "romaji": "Roppyaku",
+        "it": "600 — seicento"
+    },
+    {
+        "category": "Numeri",
+        "ja": "八百",
+        "romaji": "Happyaku",
+        "it": "800 — ottocento"
+    },
+    {
+        "category": "Numeri",
+        "ja": "千",
+        "romaji": "Sen",
+        "it": "1.000 — mille"
+    },
+    {
+        "category": "Numeri",
+        "ja": "三千",
+        "romaji": "Sanzen",
+        "it": "3.000 — tremila"
+    },
+    {
+        "category": "Numeri",
+        "ja": "八千",
+        "romaji": "Hassen",
+        "it": "8.000 — ottomila"
+    },
+    {
+        "category": "Numeri",
+        "ja": "一万",
+        "romaji": "Ichiman",
+        "it": "10.000 — diecimila"
+    },
+    {
+        "category": "Numeri",
+        "ja": "一つ",
+        "romaji": "Hitotsu",
+        "it": "Uno (oggetti generici)"
+    },
+    {
+        "category": "Numeri",
+        "ja": "二つ",
+        "romaji": "Futatsu",
+        "it": "Due (oggetti generici)"
+    },
+    {
+        "category": "Numeri",
+        "ja": "三つ",
+        "romaji": "Mittsu",
+        "it": "Tre (oggetti generici)"
+    },
+    {
+        "category": "Numeri",
+        "ja": "一人",
+        "romaji": "Hitori",
+        "it": "Una persona"
+    },
+    {
+        "category": "Numeri",
+        "ja": "二人",
+        "romaji": "Futari",
+        "it": "Due persone"
+    },
+    {
+        "category": "Numeri",
+        "ja": "三人",
+        "romaji": "Sannin",
+        "it": "Tre persone"
+    },
+    {
+        "category": "Numeri",
+        "ja": "二人です。",
+        "romaji": "Futari desu.",
+        "it": "Siamo in due."
+    },
+    {
+        "category": "Numeri",
+        "ja": "二つお願いします。",
+        "romaji": "Futatsu onegaishimasu.",
+        "it": "Due, per favore."
+    },
+    {
+        "category": "Numeri",
+        "ja": "千円",
+        "romaji": "Sen en",
+        "it": "1.000 yen"
+    },
+    {
+        "category": "Numeri",
+        "ja": "いくらですか？",
+        "romaji": "Ikura desu ka?",
+        "it": "Quanto costa?"
     }
 ];
 // Optional interactive story: six real-world chapters, selected by the traveller.
@@ -5357,7 +5538,7 @@ try{writeJapanStore(STORE_PREFIX+id,merged);}
               for(const d of s.docs){try{const entry=await decryptValue(d.data());rows.push({...entry,recordId:d.id});}catch(e){}}
               if(g!==generation||seq!==activitySnapshotSeq)return;
               const marker=rows.filter(e=>e.id==='activity_reset').sort((a,b)=>new Date(b.at||0)-new Date(a.at||0))[0];
-              const start=Math.max(Date.parse(ACTIVITY_FRESH_V43),Date.parse(marker?.at||0)||0);
+              const start=Math.max(Date.parse(ACTIVITY_FRESH_V108),Date.parse(marker?.at||0)||0);
               recentActivity=rows.filter(e=>e.id!=='activity_reset' && Date.parse(e.at||0)>start);
               activityCallbacks.forEach(cb=>{try{cb([...recentActivity]);}catch(e){}});
               emit({});
@@ -5823,8 +6004,8 @@ function CloudSyncPanel({onClose}) {
 }
 
 
-const ACTIVITY_FRESH_V43 = '2026-11-23T10:55:00.000Z';
-function Japan24ActivityPage({status,onRefresh}){
+const ACTIVITY_FRESH_V108 = '2026-11-27T07:14:00.000Z';
+function Japan24ActivityPage({status,onRefresh,archivePanel}){
  const R=React.createElement;
  const [history,setHistory]=React.useState(()=>Japan22Cloud.getRecentActivity());
  const [working,setWorking]=React.useState(false);
@@ -5861,7 +6042,7 @@ function Japan24ActivityPage({status,onRefresh}){
  return R('section',{className:'j24-activity-page j28-updates'},
    R('header',{className:'j24-hero j28-hero'},
      R('div',null,R('h2',null,'10. 📣 Updates'),
-       R('p',null,'Nuovo inizio: lo storico precedente alla V43 non viene mostrato.')),
+       R('p',null,'Nuovo inizio V108: solo le modifiche registrate dal 27 novembre 2026, ore 07:14 (UK).')),
      R('button',{className:'j24-sync-button',type:'button',disabled:working,onClick:refresh},working?'Aggiorno…':'↻ Aggiorna')),
    R('div',{className:'j28-status-strip',role:'status'},
      R('span',{className:'j28-status-dot '+(connected?'ok':'off')}),
@@ -5884,10 +6065,11 @@ function Japan24ActivityPage({status,onRefresh}){
        R('div',{className:'j24-event-body'},R('strong',null,event.description||'Modifica condivisa'),
          R('small',null,(event.by||'Dispositivo collegato')+' · '+format(event.at)+(event.updates>1?' · '+event.updates+' modifiche':'') ))))):
        R('p',{className:'j28-empty'},filter==='others'?'Nessuna modifica dall’altro dispositivo.':'Ancora nessuna modifica registrata.')),
+   archivePanel,
    R('details',{className:'j28-diagnostics'},
      R('summary',null,'Dettagli sincronizzazione'),
      R('div',{className:'j28-diagnostics-body'},
-       R('p',null,'Viaggio: '+(status.tripTag||'—')+' · Versione: V44'),
+       R('p',null,'Viaggio: '+(status.tripTag||'—')+' · Versione: V108'),
        R('p',null,'Ultima modifica ricevuta: '+(status.lastRemoteAuthor||'—')+' · '+format(status.lastRemoteChange)),
        R('p',null,'Se manca qualcosa, verificate lo stesso viaggio su entrambi i telefoni e premete Aggiorna. Le foto dell’archivio vengono sincronizzate se il collegamento e i permessi cloud sono attivi.'))));
 }
@@ -9429,7 +9611,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
         cloudPanelOpen && React.createElement(CloudSyncPanel, { onClose: () => setCloudPanelOpen(false) }),
         React.createElement("main", { className: "trip-shell mx-auto px-3 py-4 flex-1 w-full pb-24 md:pb-8" },
             activeTab === 'today' && renderTodayTab(),
-            activeTab === 'activity' && React.createElement(Japan24ActivityPage, {status:cloudInfo}),
+            activeTab === 'activity' && React.createElement(Japan24ActivityPage, {status:cloudInfo,archivePanel:React.createElement('section',{className:'travel-panel p-4'},React.createElement('h3',{id:'updates-export',className:'travel-heading'},'📦 Archivio di fine viaggio'),React.createElement('p',{className:'j29-note-hint'},'Album HTML autonomo con itinerari salvati, taccuino, foto, note, preferiti, spese, checklist e ricordi romantici. Esporta da entrambi i telefoni per conservare le note private. Prima sincronizza e controlla le foto.'),React.createElement('button',{type:'button',className:'tea-guide-button',onClick:exportTrip,disabled:exportBusy},exportBusy?'Preparazione album…':'↓ Esporta album completo'),lastAlbum&&React.createElement('button',{type:'button',className:'tea-guide-button',onClick:shareLastAlbum},'↗ Salva / condividi album'),React.createElement('button',{type:'button',className:'tea-guide-button',onClick:()=>Japan22Cloud.downloadBackup()},'↓ Backup JSON ripristinabile'),React.createElement('p',{className:'j29-note-hint'},'Il backup JSON esistente è per ripristinare l’app; l’album è il ricordo leggibile anche senza l’app.'))}),
             activeTab === 'hotels' && renderHotelsTab(),
             activeTab === 'planner' && renderPlannerWorkspace(),
             activeTab === 'rightnow' && renderRightHereNow(),
@@ -9738,7 +9920,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
                                 starButton(spot,{category:'Eventi di dicembre',city:spot.city},'favorite-star favorite-star-small'))));
                     }))))),
             activeTab === 'route' && renderPlannerWorkspace(),
-            activeTab === 'travelkit' && (React.createElement("div", { className: "space-y-4" },React.createElement('nav',{className:'kit-shortcuts','aria-label':'Strumenti'},...Object.entries({'kit-phrases':'Frasario','kit-money':'Cambio e spese','kit-pack':'Valigia','kit-export':'Esporta viaggio'}).map(([id,label])=>React.createElement('button',{key:id,onClick:()=>document.getElementById(id)?.scrollIntoView({block:'start'})},label))),
+            activeTab === 'travelkit' && (React.createElement("div", { className: "space-y-4" },React.createElement('nav',{className:'kit-shortcuts','aria-label':'Strumenti'},...Object.entries({'kit-phrases':'Frasario','kit-money':'Cambio e spese','kit-pack':'Valigia'}).map(([id,label])=>React.createElement('button',{key:id,onClick:()=>document.getElementById(id)?.scrollIntoView({block:'start'})},label))),
                 React.createElement("section", { className: `ww-card p-5 md:p-6 text-white ${theme === 'windwaker' ? 'bg-gradient-to-r from-[#004e82] via-[#0069ad] to-[#0088cc]' : 'bg-gradient-to-r from-[#991b1b] via-[#dc2626] to-[#ef4444]'}` },
                     React.createElement("div", { className: "flex flex-col lg:flex-row lg:items-end justify-between gap-4" },
                         React.createElement("div", { className: "max-w-2xl" },
@@ -9837,7 +10019,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
                             React.createElement('span',{role:'status','aria-live':'polite'},phraseAudioState||'Usa 🔊 accanto a ogni frase.')),
                         React.createElement("input", { value: phraseSearch, onChange: e => { setPhraseSearch(e.target.value); setPhraseShowAll(false); }, placeholder: "\u2315 Cerca una frase in italiano, romaji o giapponese\u2026", className: "explore-search max-w-none mb-3", "aria-label": "Cerca nel frasario" }),
                         React.createElement("div", { className: "phrase-tabs" }, ['Tutte', ...new Set(JAPANESE_PHRASES.map(p=>p.category))].map(c => React.createElement("button", { key: c, onClick: () => { setPhraseCategory(c); setPhraseShowAll(false); }, className: 'phrase-chip ' + (phraseCategory === c ? 'is-active' : '') }, c))),
-                        React.createElement("div", { className: "phrase-compact-list" }, JAPANESE_PHRASES.filter(p => (phraseCategory === 'Tutte' || p.category === phraseCategory) && (!phraseSearch.trim() || [p.ja, p.romaji, p.it].join(' ').toLocaleLowerCase().includes(phraseSearch.trim().toLocaleLowerCase()))).slice(0, phraseShowAll ? undefined : 7).map(p => React.createElement("article", { className: "phrase-compact-row", key: p.ja },
+                        React.createElement("div", { className: "phrase-compact-list" }, JAPANESE_PHRASES.filter(p => (phraseCategory === 'Tutte' || p.category === phraseCategory) && (!phraseSearch.trim() || [p.ja, p.romaji, p.it].join(' ').toLocaleLowerCase().includes(phraseSearch.trim().toLocaleLowerCase()))).slice(0, (phraseShowAll || phraseCategory === 'Numeri') ? undefined : 7).map(p => React.createElement("article", { className: "phrase-compact-row", key: p.category + ":" + p.ja },
                             React.createElement("div", { className: "phrase-compact-jp", lang: "ja" },
                                 p.ja,
                                 React.createElement("span", null, p.romaji)),
@@ -9851,7 +10033,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
                             React.createElement("span", null,
                                 n,
                                 " frasi nella categoria"),
-                            n > 7 && React.createElement("button", { className: "phrase-expand-button", onClick: () => setPhraseShowAll(!phraseShowAll) }, phraseShowAll ? '↑ Mostra meno' : `↓ Scopri altre ${n - 7} frasi`)); })()),
+                            n > 7 && phraseCategory !== 'Numeri' && React.createElement("button", { className: "phrase-expand-button", onClick: () => setPhraseShowAll(!phraseShowAll) }, phraseShowAll ? '↑ Mostra meno' : `↓ Scopri altre ${n - 7} frasi`)); })()),
                     ),
                 React.createElement("section", { className: "travel-panel p-4" },
                     React.createElement("div", { className: "travel-kicker" }, "PRIVATO · SOLO QUESTO DISPOSITIVO"),
@@ -9859,7 +10041,6 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
                     React.createElement("textarea", { value: travelNotes, onChange: e => setTravelNotes(e.target.value), rows: "4", placeholder: "Cose che vuoi ricordare soltanto tu…", className: "w-full border p-3 text-sm resize-y", 'aria-label':'Promemoria personale, non sincronizzato' }),
                     React.createElement('button',{type:'button',className:'tea-guide-button',onClick:()=>{try{localStorage.setItem('japan2026:personalNotes',JSON.stringify(travelNotes));showToast('Nota personale salvata');}catch(e){showToast('Salvataggio non riuscito: spazio insufficiente.');}}},'💾 Salva nota personale'),
                     React.createElement("small", {className:"j29-note-hint"}, "Salvataggio automatico e manuale su questo dispositivo; non viene inviato a Firebase.")),
-                React.createElement('section',{className:'travel-panel p-4'},React.createElement('h3',{id:'kit-export',className:'travel-heading'},'📦 Archivio di fine viaggio'),React.createElement('p',{className:'j29-note-hint'},'Album HTML autonomo con itinerari salvati, taccuino, foto, note, preferiti, spese, checklist e ricordi romantici. Esporta da entrambi i telefoni per conservare le note private. Prima sincronizza e controlla le foto.'),React.createElement('button',{type:'button',className:'tea-guide-button',onClick:exportTrip,disabled:exportBusy},exportBusy?'Preparazione album…':'↓ Esporta album completo'),lastAlbum&&React.createElement('button',{type:'button',className:'tea-guide-button',onClick:shareLastAlbum},'↗ Salva / condividi album'),React.createElement('button',{type:'button',className:'tea-guide-button',onClick:()=>Japan22Cloud.downloadBackup()},'↓ Backup JSON ripristinabile'),React.createElement('p',{className:'j29-note-hint'},'Il backup JSON esistente è per ripristinare l’app; l’album è il ricordo leggibile anche senza l’app.')),
                 React.createElement('section',{className:'travel-panel p-4 j29-shared-notes'},
                     React.createElement('div',{className:'travel-kicker'},'☁️ NOTE DEL VIAGGIO · CONDIVISE'),
                     React.createElement('h3',{className:'travel-heading mt-1 mb-2'},'📝 Note di viaggio condivise'),
@@ -9876,7 +10057,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
                     React.createElement("div", { className: "archive-cover" },
                         React.createElement("div", null,
                             React.createElement("span", { className: "archive-eyebrow" }, "Taccuino di Silvia e Ugo"),
-                            React.createElement("h3", null, "Discovery Archive"),React.createElement("button",{type:"button",className:"tea-guide-button",onClick:exportTrip,disabled:exportBusy},"↓ Esporta album completo"),
+                            React.createElement("h3", null, "Discovery Archive"),React.createElement("button",{type:"button",className:"tea-guide-button",onClick:()=>{setActiveTab("activity");setTimeout(()=>document.getElementById("updates-export")?.scrollIntoView({block:"start"}),150);}},"↗ Archivio di fine viaggio"),
                             React.createElement("p", null, "Le foto, i sapori e le piccole scoperte del nostro viaggio in Giappone.")),
                         React.createElement("div", { className: "archive-volume" },
                             "旅",
@@ -10058,7 +10239,7 @@ return R('div',{className:'favourites-backdrop',onClick:()=>setFavouritesOpen(fa
                     React.createElement("p", { className: "archive-disclaimer" }, "📷 Con la sincronizzazione attiva, entrambi potete ritrovare le foto nel vostro archivio condiviso."))))));
 }
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
-    navigator.serviceWorker.register('./sw.js').then(()=>navigator.serviceWorker.ready).then(reg=>{const warm=()=>{if(navigator.onLine&&navigator.connection?.saveData!==true)reg.active?.postMessage('warm-v106');};if(window.requestIdleCallback)requestIdleCallback(warm,{timeout:12000});else setTimeout(warm,8000);}).catch(() => { });
+    navigator.serviceWorker.register('./sw.js').then(()=>navigator.serviceWorker.ready).then(reg=>{const warm=()=>{if(navigator.onLine&&navigator.connection?.saveData!==true)reg.active?.postMessage('warm-v108');};if(window.requestIdleCallback)requestIdleCallback(warm,{timeout:12000});else setTimeout(warm,8000);}).catch(() => { });
 }
 const mount=document.getElementById('root');
 if(window.React && window.ReactDOM && location.hash!=='#offline'){
